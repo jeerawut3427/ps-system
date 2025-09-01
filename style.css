@@ -1,0 +1,45 @@
+/* ตั้งค่าฟอนต์หลักของหน้าเว็บ */
+body { 
+    font-family: 'Kanit', sans-serif; 
+}
+
+/* สไตล์สำหรับแท็บที่กำลังถูกเลือก */
+.tab-button.active { 
+    border-color: #3b82f6; 
+    color: #3b82f6; 
+    background-color: #eff6ff;
+}
+
+/* ซ่อน Modal (หน้าต่าง Pop-up) เป็นค่าเริ่มต้น */
+.modal { 
+    display: none; 
+}
+
+/* แสดง Modal เมื่อมีคลาส active */
+.modal.active { 
+    display: flex; 
+}
+
+/* สไตล์สำหรับ Inline Editing */
+.edit-mode .display-field {
+    display: none;
+}
+.edit-mode .edit-field {
+    display: block;
+}
+.display-field {
+    display: block;
+}
+.edit-field {
+    display: none;
+}
+
+/* สไตล์สำหรับแถวที่ถูกเลือกในหน้าส่งยอด */
+.row-selected {
+    background-color: #eff6ff; /* Tailwind's blue-50 */
+}
+
+/* กำหนดความสูงขั้นต่ำให้พื้นที่เนื้อหาหลัก */
+.main-content-area {
+    min-height: 60vh; /* 60% ของความสูงหน้าจอ */
+}

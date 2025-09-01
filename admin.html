@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>จัดการระบบ - ระบบรายงานกำลังพล</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-6xl">
+        <div id="message-area" class="mb-4 text-center"></div>
+        
+        <article id="app-container" class="hidden bg-white p-8 rounded-xl shadow-lg">
+            
+            <header class="flex flex-wrap justify-between items-center mb-6 border-b pb-4 gap-4">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800">หน้าสำหรับผู้ดูแลระบบ</h1>
+                    <p id="welcome-message" class="text-gray-600"></p>
+                </div>
+                <div class="flex space-x-2">
+                    <button id="back-to-selection-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded-lg">กลับสู่หน้าเลือกเมนู</button>
+                    <button id="logout-btn" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg">ออกจากระบบ</button>
+                </div>
+            </header>
+            
+            <nav class="mb-4 border-b border-gray-200">
+                <div class="flex space-x-4 overflow-x-auto pb-2" aria-label="Tabs">
+                    <button id="tab-personnel" class="tab-button hidden whitespace-nowrap py-2 px-4 text-sm font-medium text-gray-500 hover:text-blue-600 border-b-2 border-transparent">จัดการกำลังพล</button>
+                    <button id="tab-admin" class="tab-button hidden whitespace-nowrap py-2 px-4 text-sm font-medium text-gray-500 hover:text-blue-600 border-b-2 border-transparent">จัดการผู้ใช้</button>
+                </div>
+            </nav>
+            
+            <main>
+                <!-- Personnel Management Pane -->
+                <section id="pane-personnel" class="tab-pane hidden">
+                    <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
+                        <h2 class="text-xl font-semibold">รายชื่อกำลังพล</h2>
+                        <div class="flex flex-col sm:flex-row w-full md:w-auto gap-2">
+                            <div class="relative flex-grow">
+                                <input type="text" id="personnel-search-input" placeholder="ค้นหา..." class="border rounded px-2 py-2 w-full sm:w-48 pl-3 pr-8">
+                                <button id="personnel-clear-search-btn" class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="flex items-center space-x-2 mt-2 sm:mt-0">
+                                <input type="file" id="excel-import-input" class="hidden" accept=".xlsx, .xls">
+                                <button id="import-excel-btn" class="w-full sm:w-auto bg-teal-500 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-lg">นำเข้า Excel</button>
+                                <button id="add-personnel-btn" class="w-full sm:w-auto bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">เพิ่มกำลังพล</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto"><table class="min-w-full bg-white"><thead class="bg-gray-50"><tr><th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">ลำดับ</th><th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">ยศ</th><th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">ชื่อ</th><th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">นามสกุล</th><th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">ตำแหน่ง</th><th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">เหล่า</th><th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">แผนก</th><th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">ประเภท</th><th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">จัดการ</th></tr></thead><tbody id="personnel-list-area" class="bg-white divide-y divide-gray-200"></tbody></table></div>
+                    <div id="personnel-pagination" class="mt-4 flex justify-between items-center"></div>
+                </section>
+
+                <!-- User Management Pane -->
+                <section id="pane-admin" class="tab-pane hidden">
+                     <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
+                        <h2 class="text-xl font-semibold">รายชื่อผู้ใช้งานระบบ</h2>
+                        <div class="flex flex-col sm:flex-row w-full md:w-auto gap-2">
+                             <div class="relative flex-grow">
+                                <input type="text" id="user-search-input" placeholder="ค้นหา..." class="border rounded px-2 py-2 w-full sm:w-48 pl-3 pr-8">
+                                <button id="user-clear-search-btn" class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="flex items-center mt-2 sm:mt-0">
+                                <button id="add-user-btn" class="w-full sm:w-auto bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg">เพิ่มผู้ใช้</button>
+                            </div>
+                        </div>
+                     </div>
+                     <div class="overflow-x-auto"><table class="min-w-full bg-white"><thead class="bg-gray-50"><tr><th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Username</th><th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">ยศ-ชื่อ-สกุล</th><th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">ตำแหน่ง</th><th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">แผนก</th><th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">สิทธิ์</th><th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">จัดการ</th></tr></thead><tbody id="user-list-area" class="bg-white divide-y divide-gray-200"></tbody></table></div>
+                     <div id="user-pagination" class="mt-4 flex justify-between items-center"></div>
+                </section>
+            </main>
+            
+        </article>
+    </div>
+    <!-- Modals -->
+    <div id="personnel-modal" class="modal fixed inset-0 bg-gray-600 bg-opacity-50 z-20 items-center justify-center"><div class="relative mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white overflow-y-auto max-h-screen"><form id="personnel-form"><h3 id="personnel-modal-title" class="text-lg font-medium text-gray-900 mb-4">ข้อมูลกำลังพล</h3><input type="hidden" id="person-id"><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label class="block text-sm">ยศ - คำนำหน้า</label><select id="person-rank" class="w-full border rounded px-2 py-1 bg-white" required></select></div><div><label class="block text-sm">ประเภท</label><select id="person-type" class="w-full border rounded px-2 py-1 bg-white" required><option value="">-- เลือก --</option><option value="สัญญาบัตร">สัญญาบัตร</option><option value="ประทวน">ประทวน</option><option value="พนักงานราชการ">พนักงานราชการ</option><option value="ลูกจ้างประจำ">ลูกจ้างประจำ</option></select></div><div class="md:col-span-2"><label class="block text-sm">ชื่อ</label><input type="text" id="person-first-name" class="w-full border rounded px-2 py-1" required></div><div class="md:col-span-2"><label class="block text-sm">นามสกุล</label><input type="text" id="person-last-name" class="w-full border rounded px-2 py-1" required></div><div><label class="block text-sm">เหล่า</label><select id="person-specialty" class="w-full border rounded px-2 py-1 bg-white" required><option value="ชย.">ชย.</option><option value="สบ.">สบ.</option></select></div><div class="md:col-span-2"><label class="block text-sm">ตำแหน่ง</label><input type="text" id="person-position" class="w-full border rounded px-2 py-1" required></div><div class="md:col-span-2"><label class="block text-sm">แผนก</label><select id="person-department" class="w-full border rounded px-2 py-1 bg-white" required><option value="ฝธก.กวก.ชย.ทอ.">ฝธก.กวก.ชย.ทอ.</option><option value="ฝธก.กอบ.กวก.ชย.ทอ.">ฝธก.กอบ.กวก.ชย.ทอ.</option><option value="ผวก.กวก.ชย.ทอ.">ผวก.กวก.ชย.ทอ.</option><option value="ผจง.กวก.ชย.ทอ.">ผจง.กวก.ชย.ทอ.</option><option value="ผตค.กวก.ชย.ทอ.">ผตค.กวก.ชย.ทอ.</option><option value="ผบผ.กอบ.กวก.ชย.ทอ.">ผบผ.กอบ.กวก.ชย.ทอ.</option><option value="ผวคส.กอบ.กวก.ชย.ทอ.">ผวคส.กอบ.กวก.ชย.ทอ.</option><option value="ผวร.กอบ.กวก.ชย.ทอ.">ผวร.กอบ.กวก.ชย.ทอ.</option><option value="ผวยธ.กอบ.กวก.ชย.ทอ.">ผวยธ.กอบ.กวก.ชย.ทอ.</option></select></div></div><div class="items-center px-4 py-3 mt-4 text-right"><button id="cancel-personnel-btn" type="button" class="px-4 py-2 bg-gray-200 rounded-md mr-2">ยกเลิก</button><button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-md">บันทึก</button></div></form></div></div>
+    <div id="user-modal" class="modal fixed inset-0 bg-gray-600 bg-opacity-50 z-20 items-center justify-center"><div class="relative mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white overflow-y-auto max-h-screen"><form id="user-form"><h3 id="user-modal-title" class="text-lg font-medium text-gray-900 mb-4">ข้อมูลผู้ใช้งาน</h3><div class="space-y-4"><div><label class="block text-sm">Username</label><input type="text" id="user-username" class="w-full border rounded px-2 py-1" required></div><div><label class="block text-sm">Password <span class="text-xs text-gray-500">(กรอกเพื่อตั้งใหม่)</span></label><input type="password" id="user-password" class="w-full border rounded px-2 py-1"></div><hr><div><label class="block text-sm">ยศ-คำนำหน้า</label><select id="user-rank" class="w-full border rounded px-2 py-1 bg-white" required></select></div><div><label class="block text-sm">ชื่อ</label><input type="text" id="user-first-name" class="w-full border rounded px-2 py-1" required></div><div><label class="block text-sm">นามสกุล</label><input type="text" id="user-last-name" class="w-full border rounded px-2 py-1" required></div><div><label class="block text-sm">ตำแหน่ง</label><input type="text" id="user-position" class="w-full border rounded px-2 py-1" required></div><div><label class="block text-sm">แผนก</label><select id="user-department" class="w-full border rounded px-2 py-1 bg-white" required><option value="ฝธก.กวก.ชย.ทอ.">ฝธก.กวก.ชย.ทอ.</option><option value="ฝธก.กอบ.กวก.ชย.ทอ.">ฝธก.กอบ.กวก.ชย.ทอ.</option><option value="ผวก.กวก.ชย.ทอ.">ผวก.กวก.ชย.ทอ.</option><option value="ผจง.กวก.ชย.ทอ.">ผจง.กวก.ชย.ทอ.</option><option value="ผตค.กวก.ชย.ทอ.">ผตค.กวก.ชย.ทอ.</option><option value="ผบผ.กอบ.กวก.ชย.ทอ.">ผบผ.กอบ.กวก.ชย.ทอ.</option><option value="ผวคส.กอบ.กวก.ชย.ทอ.">ผวคส.กอบ.กวก.ชย.ทอ.</option><option value="ผวร.กอบ.กวก.ชย.ทอ.">ผวร.กอบ.กวก.ชย.ทอ.</option><option value="ผวยธ.กอบ.กวก.ชย.ทอ.">ผวยธ.กอบ.กวก.ชย.ทอ.</option></select></div><div><label class="block text-sm">สิทธิ์การเข้าถึง (Role)</label><select id="user-role" class="w-full border rounded px-2 py-1 bg-white" required><option value="user">User (ดูข้อมูลได้อย่างเดียว)</option><option value="admin">Admin (จัดการได้ทุกอย่าง)</option></select></div></div><div class="items-center px-4 py-3 mt-4 text-right"><button id="cancel-user-btn" type="button" class="px-4 py-2 bg-gray-200 rounded-md mr-2">ยกเลิก</button><button type="submit" class="px-4 py-2 bg-purple-500 text-white rounded-md">บันทึก</button></div></form></div></div>
+    
+    <div id="confirm-modal" class="modal fixed inset-0 bg-gray-600 bg-opacity-50 z-30 items-center justify-center">
+        <div class="relative bg-white rounded-lg shadow-xl max-w-sm w-full p-6">
+            <h3 id="confirm-modal-title" class="text-xl font-semibold mb-4 text-gray-800">ยืนยันการกระทำ</h3>
+            <p id="confirm-modal-message" class="text-gray-600 mb-6">คุณแน่ใจหรือไม่?</p>
+            <div class="flex justify-end space-x-2">
+                <button id="confirm-modal-cancel-btn" type="button" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-bold hover:bg-gray-300">ยกเลิก</button>
+                <button id="confirm-modal-confirm-btn" type="button" class="px-4 py-2 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700">ยืนยัน</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="alert-modal" class="modal fixed inset-0 bg-gray-600 bg-opacity-50 z-40 items-center justify-center">
+        <div class="relative bg-white rounded-lg shadow-xl max-w-sm w-full p-6">
+            <h3 id="alert-modal-title" class="text-xl font-semibold mb-4 text-gray-800">แจ้งเตือน</h3>
+            <div id="alert-modal-message" class="text-gray-600 mb-6"></div>
+            <div class="flex justify-end">
+                <button id="alert-modal-ok-btn" type="button" class="px-4 py-2 bg-blue-500 text-white rounded-lg font-bold hover:bg-blue-600">ตกลง</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scripts loaded at the end for better performance and correct order -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <script src="admin.js" type="module" defer></script>
+</body>
+</html>
+

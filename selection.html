@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เลือกประเภทระบบ - ระบบส่งยอดกำลังพล</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            background-color: #0d1a2e;
+            background-image:
+                radial-gradient(at 27% 37%, hsla(215, 98%, 60%, 0.1) 0px, transparent 50%),
+                radial-gradient(at 97% 21%, hsla(125, 98%, 72%, 0.1) 0px, transparent 50%),
+                radial-gradient(at 52% 99%, hsla(355, 98%, 76%, 0.1) 0px, transparent 50%),
+                radial-gradient(at 10% 29%, hsla(256, 96%, 68%, 0.1) 0px, transparent 50%),
+                radial-gradient(at 97% 96%, hsla(38, 60%, 74%, 0.1) 0px, transparent 50%),
+                radial-gradient(at 33% 50%, hsla(222, 67%, 73%, 0.1) 0px, transparent 50%),
+                radial-gradient(at 79% 53%, hsla(343, 68%, 79%, 0.1) 0px, transparent 50%);
+        }
+        .admin-section {
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            padding-top: 1rem;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4 font-kanit">
+    <div class="w-full max-w-md">
+        <div class="bg-white/10 backdrop-blur-lg p-8 rounded-2xl shadow-2xl border border-white/20 text-center">
+            <h1 class="text-2xl font-bold mb-2 text-white">ระบบส่งยอดกำลังพล กองวิทยาการ</h1>
+            <h2 class="text-md mb-8 text-gray-300">กรมช่างโยธาทหารอากาศ</h2>
+            <h3 class="text-md mb-8 text-gray-300">กรุณาเลือกประเภทระบบที่ต้องการเข้าใช้งาน</h3>
+            
+            <div class="space-y-4">
+                <a href="main.html" class="block w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105">
+                    ระบบส่งยอดประจำสัปดาห์<br>(สำหรับนายทหารสัญญาบัตร)
+                </a>
+                <a href="main_daily.html" class="block w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105">
+                    ระบบส่งยอดกำลังพลประจำวัน<br>(สัญญาบัตร และ ประทวน)
+                </a>
+            </div>
+
+            <!-- Admin Section -->
+            <div id="admin-menu" class="hidden admin-section space-y-4">
+                 <h3 class="text-md text-gray-300">สำหรับผู้ดูแลระบบ</h3>
+                 <a href="admin.html" class="block w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105">
+                    จัดการกำลังพล / ผู้ใช้งาน
+                </a>
+            </div>
+        </div>
+        
+        <div class="mt-8 text-center">
+            <button id="logout-btn" class="text-gray-400 hover:text-gray-200 font-medium">
+                ออกจากระบบ
+            </button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const logoutBtn = document.getElementById('logout-btn');
+            const adminMenu = document.getElementById('admin-menu');
+            let currentUser = null;
+
+            try {
+                currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            } catch (e) {
+                currentUser = null;
+            }
+
+            if (!currentUser) {
+                window.location.href = '/login.html';
+                return;
+            }
+
+            if (currentUser.role === 'admin') {
+                adminMenu.classList.remove('hidden');
+            }
+
+            logoutBtn.addEventListener('click', async () => {
+                await fetch('/api', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'logout' })
+                });
+                localStorage.removeItem('currentUser');
+                window.location.href = '/login.html';
+            });
+        });
+    </script>
+</body>
+</html>
+

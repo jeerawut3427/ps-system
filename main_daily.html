@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบส่งยอดกำลังพลประจำวัน</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-6xl">
+        <div id="message-area" class="mb-4 text-center"></div>
+        
+        <article id="app-container" class="hidden bg-white p-8 rounded-xl shadow-lg">
+            
+            <header class="flex flex-wrap justify-between items-center mb-6 border-b pb-4 gap-4">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800">ระบบส่งยอดกำลังพลประจำวัน</h1>
+                    <p id="welcome-message" class="text-gray-600"></p>
+                </div>
+                <div class="flex space-x-2">
+                    <button id="back-to-selection-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded-lg">กลับสู่หน้าเลือกเมนู</button>
+                    <button id="logout-btn" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg">ออกจากระบบ</button>
+                </div>
+            </header>
+            
+            <nav class="mb-4 border-b border-gray-200">
+                <div class="flex space-x-4 overflow-x-auto pb-2" aria-label="Tabs">
+                    <button id="tab-dashboard-daily" class="tab-button hidden whitespace-nowrap py-2 px-4 text-sm font-medium text-gray-500 hover:text-blue-600 border-b-2 border-transparent">แดชบอร์ดประจำวัน</button>
+                    <button id="tab-status-daily" class="tab-button hidden whitespace-nowrap py-2 px-4 text-sm font-medium text-gray-500 hover:text-blue-600 border-b-2 border-transparent">สถานะกำลังพล (ภาพรวม)</button>
+                    <button id="tab-submit-status-daily" class="tab-button whitespace-nowrap py-2 px-4 text-sm font-medium text-gray-500 hover:text-blue-600 border-b-2 border-transparent">ส่งยอดประจำวัน</button>
+                    <button id="tab-history-daily" class="tab-button whitespace-nowrap py-2 px-4 text-sm font-medium text-gray-500 hover:text-blue-600 border-b-2 border-transparent">ประวัติการส่ง (ประจำวัน)</button>
+                    <button id="tab-summary-daily" class="tab-button hidden whitespace-nowrap py-2 px-4 text-sm font-medium text-gray-500 hover:text-blue-600 border-b-2 border-transparent">สรุปรายงานประจำวัน</button>
+                </div>
+            </nav>
+            
+            <main>
+                 <!-- Daily Dashboard Pane -->
+                <section id="pane-dashboard-daily" class="tab-pane hidden">
+                    <div class="flex items-baseline gap-x-3 mb-4">
+                        <h2 class="text-xl font-semibold">สรุปภาพรวมประจำวัน - <span id="daily-dashboard-date"></span></h2>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                        <div class="bg-blue-50 p-4 rounded-lg shadow">
+                            <h3 class="font-semibold text-blue-800">กำลังพลทั้งหมด</h3>
+                            <p id="daily-dashboard-total-personnel" class="text-3xl font-bold text-blue-600">-</p>
+                        </div>
+                        <div class="bg-green-50 p-4 rounded-lg shadow">
+                            <h3 class="font-semibold text-green-800">มาปฏิบัติงาน</h3>
+                            <p id="daily-dashboard-present" class="text-3xl font-bold text-green-600">-</p>
+                        </div>
+                        <div class="bg-yellow-50 p-4 rounded-lg shadow">
+                            <h3 class="font-semibold text-yellow-800">ไม่มาปฏิบัติงาน</h3>
+                            <p id="daily-dashboard-absent" class="text-3xl font-bold text-yellow-600">-</p>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold mb-3">สถานะการส่งรายงานของแผนก</h3>
+                        <div id="daily-dashboard-department-status" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+                    </div>
+                </section>
+
+                <!-- Persistent Status Pane (Copied from Weekly) -->
+                <section id="pane-status-daily" class="tab-pane hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 id="status-title" class="text-xl font-semibold">สถานะกำลังพลภาพรวม (ระยะยาว)</h2>
+                    </div>
+                    <div id="status-filter-container" class="flex flex-wrap gap-2 mb-6 border-b pb-4">
+                        <!-- Filter buttons will be dynamically inserted here -->
+                    </div>
+                    <div id="chart-container" class="mb-8 p-4 bg-gray-50 rounded-lg flex justify-center items-center h-64 md:h-80">
+                        <canvas id="status-chart-canvas"></canvas>
+                    </div>
+                    
+                    <h3 id="unavailable-title" class="text-lg font-semibold text-red-600 mb-3">กำลังพลติดภารกิจ</h3>
+                    <div id="unavailable-container" class="overflow-x-auto mb-8"></div>
+
+                    <h3 id="available-title" class="text-lg font-semibold text-green-600 mb-3">กำลังพลว่าง</h3>
+                    <div id="available-container" class="overflow-x-auto"></div>
+                </section>
+
+
+                <!-- Submit Status Pane -->
+                <section id="pane-submit-status-daily" class="tab-pane hidden">
+                     <div id="admin-dept-selector-container" class="mb-4"></div>
+                     <div id="submission-info-area" class="hidden text-center p-4 mb-4 bg-green-100 text-green-800 rounded-lg"></div>
+                     <div class="flex justify-between items-center mb-4">
+                        <h2 id="submit-status-title" class="text-xl font-semibold"></h2>
+                    </div>
+                    <div id="submission-form-section" class="overflow-x-auto">
+                        <table class="min-w-full bg-white">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">ลำดับ</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">ยศ-ชื่อ-สกุล</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">สถานะ</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">หมายเหตุ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="status-submission-list-area" class="bg-white divide-y divide-gray-200"></tbody>
+                        </table>
+                        <div class="mt-6 text-right">
+                            <button id="review-status-btn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">ตรวจสอบก่อนส่ง</button>
+                        </div>
+                    </div>
+                    <div id="review-report-section" class="hidden">
+                        <h3 class="text-xl font-semibold mb-4 text-gray-700">ตรวจสอบรายการก่อนส่งยอด</h3>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full bg-white border">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">ยศ-ชื่อ-สกุล</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">สถานะ</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">หมายเหตุ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="review-list-area"></tbody>
+                            </table>
+                        </div>
+                        <div class="mt-6 text-right">
+                            <button id="back-to-form-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded-lg mr-2">แก้ไข</button>
+                            <button id="confirm-submit-btn" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">ยืนยันและส่งยอด</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- History Pane -->
+                <section id="pane-history-daily" class="tab-pane hidden">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-semibold">ประวัติการส่งรายงานย้อนหลัง (ประจำวัน)</h2>
+                        <button id="show-history-btn" class="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg">โหลดประวัติทั้งหมด</button>
+                    </div>
+                    <div id="history-container" class="space-y-6"></div>
+                </section>
+
+                <!-- Summary Pane (Admin) -->
+                <section id="pane-summary-daily" class="tab-pane hidden">
+                    <div class="flex flex-wrap justify-between items-center mb-4 gap-2">
+                         <h2 class="text-xl font-semibold">สรุปการส่งรายงาน ประจำวันที่ <span id="summary-date"></span></h2>
+                         <button id="export-excel-btn" class="bg-teal-500 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-lg">Export to Excel</button>
+                    </div>
+                    <div id="summary-container" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+                </section>
+            </main>
+            
+        </article>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <script src="app_daily.js" type="module" defer></script>
+</body>
+</html>
+
