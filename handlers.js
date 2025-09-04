@@ -216,7 +216,7 @@ export function handleReviewStatus() {
                 hasError = true; return;
             }
             reviewItems.push({
-                personnel_id: row.dataset.personnelId,
+                personnel_id: row.dataset.personnelId, 
                 personnel_name: row.dataset.personnelName, 
                 status: statusSelect.value,
                 details: row.querySelector('.details-input').value,

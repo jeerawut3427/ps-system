@@ -6,7 +6,7 @@ import { escapeHTML, formatThaiDateArabic, formatThaiDateRangeArabic } from './u
 const ITEMS_PER_PAGE = 15;
 
 // --- Thai locale settings for Flatpickr ---
-const thai_locale = {
+export const thai_locale = {
     weekdays: {
         shorthand: ["อา", "จ", "อ", "พ", "พฤ", "ศ", "ส"],
         longhand: ["อาทิตย์", "จันทร์", "อังคาร", "พุธ", "พฤหัสบดี", "ศุกร์", "เสาร์"],
@@ -564,7 +564,16 @@ export function addStatusRow(clickedButton) {
         </td>
     `;
 
-    mainRow.parentNode.insertBefore(newRow, mainRow.nextSibling);
+    // Find the last row for this person and insert after it
+    let lastRowForPerson = mainRow;
+    let nextSibling = mainRow.nextElementSibling;
+    while (nextSibling && nextSibling.dataset.personnelId === mainRow.dataset.personnelId) {
+        lastRowForPerson = nextSibling;
+        nextSibling = nextSibling.nextElementSibling;
+    }
+    
+    lastRowForPerson.parentNode.insertBefore(newRow, lastRowForPerson.nextSibling);
+
 
     const flatpickrConfig = {
         locale: thai_locale, 
