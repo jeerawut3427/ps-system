@@ -2,40 +2,20 @@
 // Contains all event handler functions.
 
 import { sendRequest } from './api.js';
-import { showMessage, openPersonnelModal, openUserModal, renderArchivedReports, renderFilteredHistoryReports, showConfirmModal, showAlertModal } from './ui.js';
-import { exportSingleReportToExcel, formatThaiDateArabic, formatThaiDateRangeArabic, escapeHTML } from './utils.js';
-
-// All functions access global variables and DOM via the window object
+import { showMessage, openPersonnelModal, openUserModal, showConfirmModal, addStatusRow, renderArchivedReports, renderFilteredHistoryReports } from './ui.js';
+import { exportSingleReportToExcel, formatThaiDateRangeArabic, escapeHTML } from './utils.js';
 
 export async function handlePersonnelFormSubmit(e) {
     e.preventDefault();
-    const form = e.target;
-    const requiredFields = [
-        { id: 'person-rank', name: 'ยศ - คำนำหน้า' },
-        { id: 'person-first-name', name: 'ชื่อ' },
-        { id: 'person-last-name', name: 'นามสกุล' },
-        { id: 'person-position', name: 'ตำแหน่ง' },
-        { id: 'person-department', name: 'แผนก' }
-    ];
-
-    const missingFields = requiredFields.filter(field => !form.querySelector(`#${field.id}`).value);
-
-    if (missingFields.length > 0) {
-        const missingFieldNames = missingFields.map(field => field.name).join('<br>- ');
-        showAlertModal('ข้อมูลไม่ครบถ้วน', `กรุณากรอกข้อมูลต่อไปนี้:<br>- ${missingFieldNames}`);
-        return;
-    }
-
-    const personId = form.querySelector('#person-id').value;
+    const personId = window.personnelForm.querySelector('#person-id').value;
     const data = {
         id: personId,
-        rank: form.querySelector('#person-rank').value,
-        first_name: form.querySelector('#person-first-name').value,
-        last_name: form.querySelector('#person-last-name').value,
-        position: form.querySelector('#person-position').value,
-        specialty: form.querySelector('#person-specialty').value,
-        department: form.querySelector('#person-department').value,
-        personnel_type: form.querySelector('#person-type').value,
+        rank: window.personnelForm.querySelector('#person-rank').value,
+        first_name: window.personnelForm.querySelector('#person-first-name').value,
+        last_name: window.personnelForm.querySelector('#person-last-name').value,
+        position: window.personnelForm.querySelector('#person-position').value,
+        specialty: window.personnelForm.querySelector('#person-specialty').value,
+        department: window.personnelForm.querySelector('#person-department').value,
     };
     const action = personId ? 'update_personnel' : 'add_personnel';
     try {
@@ -81,44 +61,19 @@ export async function handlePersonnelListClick(e) {
 
 export async function handleUserFormSubmit(e) {
     e.preventDefault();
-    const form = e.target;
-    const isNewUser = !form.querySelector('#user-username').readOnly;
-
-    const requiredFields = [
-        { id: 'user-username', name: 'Username' },
-        { id: 'user-rank', name: 'ยศ-คำนำหน้า' },
-        { id: 'user-first-name', name: 'ชื่อ' },
-        { id: 'user-last-name', name: 'นามสกุล' },
-        { id: 'user-position', name: 'ตำแหน่ง' },
-        { id: 'user-department', name: 'แผนก' }
-    ];
-
-    if (isNewUser) {
-        requiredFields.push({ id: 'user-password', name: 'Password' });
-    }
-
-    const missingFields = requiredFields.filter(field => !form.querySelector(`#${field.id}`).value);
-
-    if (missingFields.length > 0) {
-        const missingFieldNames = missingFields.map(field => field.name).join('<br>- ');
-        showAlertModal('ข้อมูลไม่ครบถ้วน', `กรุณากรอกข้อมูลต่อไปนี้:<br>- ${missingFieldNames}`);
-        return;
-    }
-
-    const username = form.querySelector('#user-username').value;
-    const password = form.querySelector('#user-password').value;
+    const username = window.userForm.querySelector('#user-username').value;
+    const password = window.userForm.querySelector('#user-password').value;
     const data = {
-        username: username,
-        password: password,
-        rank: form.querySelector('#user-rank').value,
-        first_name: form.querySelector('#user-first-name').value,
-        last_name: form.querySelector('#user-last-name').value,
-        position: form.querySelector('#user-position').value,
-        department: form.querySelector('#user-department').value,
-        role: form.querySelector('#user-role').value,
+        username: username, password: password,
+        rank: window.userForm.querySelector('#user-rank').value,
+        first_name: window.userForm.querySelector('#user-first-name').value,
+        last_name: window.userForm.querySelector('#user-last-name').value,
+        position: window.userForm.querySelector('#user-position').value,
+        department: window.userForm.querySelector('#user-department').value,
+        role: window.userForm.querySelector('#user-role').value,
     };
     if (!password) delete data.password;
-    const action = isNewUser ? 'add_user' : 'update_user';
+    const action = window.userForm.querySelector('#user-username').readOnly ? 'update_user' : 'add_user';
     
     try {
         const response = await sendRequest(action, { data });
@@ -173,13 +128,8 @@ export function handleExcelImport(event) {
             const worksheet = workbook.Sheets[firstSheetName];
             const json = XLSX.utils.sheet_to_json(worksheet);
             const formattedData = json.map(row => ({
-                'ยศ-คำนำหน้า': row['ยศ-คำนำหน้า'], 
-                'ชื่อ': row['ชื่อ'], 
-                'นามสกุล': row['นามสกุล'],
-                'ตำแหน่ง': row['ตำแหน่ง'], 
-                'เหล่า': row['เหล่า'], 
-                'แผนก': row['แผนก'],
-                'ประเภท': row['ประเภท']
+                rank: row['ยศ-คำนำหน้า'], first_name: row['ชื่อ'], last_name: row['นามสกุล'],
+                position: row['ตำแหน่ง'], specialty: row['เหล่า'], department: row['แผนก']
             }));
             const response = await sendRequest('import_personnel', { personnel: formattedData });
             if (response.status === 'success') {
@@ -212,11 +162,11 @@ export function handleReviewStatus() {
             const startDate = row.querySelector('.start-date-input').value;
             const endDate = row.querySelector('.end-date-input').value;
             if (!startDate || !endDate) {
-                showAlertModal('ข้อมูลไม่ครบถ้วน', 'กรุณากรอกวันที่เริ่มต้นและสิ้นสุดสำหรับรายการที่เลือก');
+                showMessage('กรุณากรอกวันที่เริ่มต้นและสิ้นสุดสำหรับรายการที่เลือก', false);
                 hasError = true; return;
             }
             reviewItems.push({
-                personnel_id: row.dataset.personnelId, 
+                personnel_id: row.dataset.personnelId,
                 personnel_name: row.dataset.personnelName, 
                 status: statusSelect.value,
                 details: row.querySelector('.details-input').value,
@@ -327,7 +277,7 @@ export function handleShowArchive() {
     const year = window.archiveYearSelect.value;
     const month = window.archiveMonthSelect.value;
     if (!year || !month) {
-        showAlertModal('ข้อมูลไม่ครบถ้วน', 'กรุณาเลือกปีและเดือน');
+        showMessage('กรุณาเลือกปีและเดือน', false);
         return;
     }
     const reportsForMonth = window.allArchivedReports[year] ? window.allArchivedReports[year][month] : [];
@@ -340,7 +290,7 @@ export function handleArchiveDownloadClick(e) {
         const year = window.archiveYearSelect.value;
         const month = window.archiveMonthSelect.value;
         if (!year || !month || !date) {
-            showAlertModal('ข้อมูลไม่ครบถ้วน', 'กรุณาเลือกปีและเดือนก่อนดาวน์โหลด');
+            showMessage('กรุณาเลือกปีและเดือนก่อนดาวน์โหลด', false);
             return;
         }
 
@@ -385,7 +335,7 @@ export function handleShowHistory() {
     const year = window.historyYearSelect.value;
     const month = window.historyMonthSelect.value;
     if (!year || !month) {
-        showAlertModal('ข้อมูลไม่ครบถ้วน', 'กรุณาเลือกปีและเดือน');
+        showMessage('กรุณาเลือกปีและเดือน', false);
         return;
     }
     const reportsForMonth = window.allHistoryData[year] ? window.allHistoryData[year][month] : [];
@@ -410,5 +360,85 @@ export async function handleWeeklyReportEditClick(e) {
     } catch (error) {
         showMessage(error.message, false);
     }
+}
+
+// *** NEW: Holiday Handlers ***
+export async function renderHolidays(res) {
+    const { holidays } = res;
+    if (!window.holidayListContainer) return;
+    window.holidayListContainer.innerHTML = '';
+
+    if (!holidays || holidays.length === 0) {
+        window.holidayListContainer.innerHTML = '<p class="text-center text-gray-500 p-4">ยังไม่มีวันหยุดที่กำหนดไว้</p>';
+        return;
+    }
+    
+    let holidayHTML = '<table class="min-w-full bg-white divide-y divide-gray-200">';
+    holidayHTML += `<thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">วันที่</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">รายละเอียด</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">จัดการ</th>
+                        </tr>
+                    </thead>`;
+    holidayHTML += '<tbody class="bg-white divide-y divide-gray-200">';
+
+    holidays.forEach(holiday => {
+        const formattedDate = new Date(holiday.date + 'T00:00:00').toLocaleDateString('th-TH', {
+            dateStyle: 'full'
+        });
+        holidayHTML += `<tr>
+            <td class="px-6 py-4 whitespace-nowrap">${formattedDate}</td>
+            <td class="px-6 py-4 whitespace-nowrap">${escapeHTML(holiday.description)}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                <button data-date="${escapeHTML(holiday.date)}" class="delete-holiday-btn text-red-600 hover:text-red-900">ลบ</button>
+            </td>
+        </tr>`;
+    });
+
+    holidayHTML += '</tbody></table>';
+    window.holidayListContainer.innerHTML = holidayHTML;
+}
+
+export async function handleAddHoliday(e) {
+    e.preventDefault(); // This is the crucial line to prevent page reload
+    const holidayDate = document.getElementById('holiday-date').value;
+    const description = document.getElementById('holiday-description').value;
+    
+    if (!holidayDate || !description) {
+        showMessage('กรุณากรอกข้อมูลให้ครบถ้วน', false);
+        return;
+    }
+    
+    try {
+        const res = await sendRequest('add_holiday', { date: holidayDate, description });
+        showMessage(res.message, res.status === 'success');
+        if (res.status === 'success') {
+            window.holidayForm.reset();
+            if (window.holidayDatepicker) {
+                window.holidayDatepicker.clear();
+            }
+            window.loadDataForPane('pane-holidays');
+        }
+    } catch (error) {
+        showMessage(error.message, false);
+    }
+}
+
+export async function handleDeleteHoliday(e) {
+    if (!e.target.classList.contains('delete-holiday-btn')) return;
+    
+    const holidayDate = e.target.dataset.date;
+    showConfirmModal('ยืนยันการลบ', `คุณแน่ใจหรือไม่ว่าต้องการลบวันหยุดนี้ (${holidayDate})?`, async () => {
+        try {
+            const res = await sendRequest('delete_holiday', { date: holidayDate });
+            showMessage(res.message, res.status === 'success');
+            if (res.status === 'success') {
+                window.loadDataForPane('pane-holidays');
+            }
+        } catch (error) {
+            showMessage(error.message, false);
+        }
+    });
 }
 

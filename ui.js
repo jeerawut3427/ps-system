@@ -30,6 +30,7 @@ const STATUS_COLORS = {
     'ศึกษา': 'bg-purple-50',
     'ลากิจ': 'bg-red-50',
     'ลาพักผ่อน': 'bg-green-50',
+    'ลาป่วย': 'bg-yellow-50',
 };
 
 // --- Color settings for the chart ---
@@ -42,17 +43,9 @@ const CHART_STATUS_COLORS = {
     'ลาพักผ่อน': '#10B981',
 };
 
-// --- Rank Definitions for UI Logic ---
-const COMMISSIONED_RANKS = [
-    'น.อ.(พ)', 'น.อ.(พ).หญิง', 'น.อ.หม่อมหลวง', 'น.อ.', 'น.อ.หญิง', 
-    'น.ท.', 'น.ท.หญิง', 'น.ต.', 'น.ต.หญิง', 
-    'ร.อ.', 'ร.อ.หญิง', 'ร.ท.', 'ร.ท.หญิง', 'ร.ต.', 'ร.ต.หญิง'
-];
-const CIVILIAN_RANKS = ['นาย', 'นาง', 'นางสาว'];
-
 
 // --- Function to create an empty state message ---
-export function createEmptyState(message) {
+function createEmptyState(message) {
     return `
         <div class="text-center py-10 px-4">
             <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
@@ -62,29 +55,6 @@ export function createEmptyState(message) {
             <p class="mt-1 text-sm text-gray-500">${escapeHTML(message)}</p>
         </div>
     `;
-}
-
-export function showAlertModal(title, message) {
-    const modal = document.getElementById('alert-modal');
-    const titleEl = document.getElementById('alert-modal-title');
-    const messageEl = document.getElementById('alert-modal-message');
-    const okBtn = document.getElementById('alert-modal-ok-btn');
-
-    if (!modal || !titleEl || !messageEl || !okBtn) return;
-
-    titleEl.textContent = title;
-    messageEl.innerHTML = message; // Use innerHTML to allow for formatted lists like <br>
-
-    const closeHandler = () => {
-        modal.classList.remove('active');
-    };
-
-    // Use a fresh listener to prevent duplicates
-    const newOkBtn = okBtn.cloneNode(true);
-    okBtn.parentNode.replaceChild(newOkBtn, okBtn);
-    newOkBtn.addEventListener('click', closeHandler, { once: true });
-    
-    modal.classList.add('active');
 }
 
 // --- Function to manage the confirmation modal ---
@@ -167,14 +137,7 @@ export function populateRankDropdowns() {
     const rankSelects = [document.getElementById('person-rank'), document.getElementById('user-rank')];
     rankSelects.forEach(select => {
         if (!select) return;
-        // Clear existing options before populating
-        select.innerHTML = ''; 
-        
-        const defaultOption = document.createElement('option');
-        defaultOption.value = "";
-        defaultOption.textContent = "-- กรุณาเลือก --";
-        select.appendChild(defaultOption);
-
+        select.innerHTML = '<option value="">-- กรุณาเลือก --</option>';
         for (const groupName in ranks) {
             const optgroup = document.createElement('optgroup');
             optgroup.label = groupName;
@@ -242,22 +205,11 @@ export function renderDashboard(res) {
 export function renderPersonnel(res) {
     if(!window.personnelListArea) return;
     const { personnel, total, page } = res;
-    window.personnelListArea.innerHTML = ''; // Always clear previous results
-
+    window.personnelListArea.innerHTML = '';
+    
     if (!personnel || personnel.length === 0) {
-        const numberOfColumns = 9; // Match the number of columns in the header
-        const emptyRow = document.createElement('tr');
-        emptyRow.innerHTML = `
-            <td colspan="${numberOfColumns}" class="text-center py-10 px-4 text-gray-500">
-                <div class="flex flex-col items-center">
-                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                        <path vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
-                    <h3 class="mt-2 text-sm font-medium text-gray-900">ไม่พบข้อมูลกำลังพล</h3>
-                    <p class="mt-1 text-sm">ลองเปลี่ยนคำค้นหาของคุณ หรือกดปุ่ม (X) เพื่อล้างการค้นหา</p>
-                </div>
-            </td>`;
-        window.personnelListArea.appendChild(emptyRow);
+        const emptyRow = `<tr><td colspan="8">${createEmptyState('ไม่พบข้อมูลกำลังพลที่ตรงกับคำค้นหา')}</td></tr>`;
+        window.personnelListArea.innerHTML = emptyRow;
         document.getElementById('personnel-pagination').innerHTML = '';
         return;
     }
@@ -265,7 +217,6 @@ export function renderPersonnel(res) {
     const startNumber = (page - 1) * ITEMS_PER_PAGE + 1;
     personnel.forEach((p, index) => {
         const row = document.createElement('tr');
-        const typeClass = p.personnel_type === 'สัญญาบัตร' ? 'text-blue-600 font-semibold' : 'text-green-600';
         row.innerHTML = `<td class="px-4 py-2">${startNumber + index}</td>
                          <td class="px-4 py-2">${escapeHTML(p.rank)}</td>
                          <td class="px-4 py-2">${escapeHTML(p.first_name)}</td>
@@ -273,7 +224,6 @@ export function renderPersonnel(res) {
                          <td class="px-4 py-2">${escapeHTML(p.position)}</td>
                          <td class="px-4 py-2">${escapeHTML(p.specialty)}</td>
                          <td class="px-4 py-2">${escapeHTML(p.department)}</td>
-                         <td class="px-4 py-2 ${typeClass}">${escapeHTML(p.personnel_type || 'ไม่ระบุ')}</td>
                          <td class="px-4 py-2 whitespace-nowrap">
                             <button data-id='${escapeHTML(p.id)}' class="edit-person-btn text-blue-600 hover:text-blue-900 mr-2">แก้ไข</button>
                             <button data-id='${escapeHTML(p.id)}' class="delete-person-btn text-red-600 hover:text-red-900">ลบ</button>
@@ -290,22 +240,11 @@ export function renderPersonnel(res) {
 export function renderUsers(res) {
     if(!window.userListArea) return;
     const { users, total, page } = res;
-    window.userListArea.innerHTML = ''; // Always clear
-
+    window.userListArea.innerHTML = '';
+    
     if (!users || users.length === 0) {
-        const numberOfColumns = 6; // Match the number of columns in the header
-        const emptyRow = document.createElement('tr');
-        emptyRow.innerHTML = `
-            <td colspan="${numberOfColumns}" class="text-center py-10 px-4 text-gray-500">
-                 <div class="flex flex-col items-center">
-                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                        <path vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
-                    <h3 class="mt-2 text-sm font-medium text-gray-900">ไม่พบผู้ใช้งาน</h3>
-                    <p class="mt-1 text-sm">ลองเปลี่ยนคำค้นหาของคุณ หรือกดปุ่ม (X) เพื่อล้างการค้นหา</p>
-                </div>
-            </td>`;
-        window.userListArea.appendChild(emptyRow);
+        const emptyRow = `<tr><td colspan="6">${createEmptyState('ไม่พบข้อมูลผู้ใช้ที่ตรงกับคำค้นหา')}</td></tr>`;
+        window.userListArea.innerHTML = emptyRow;
         document.getElementById('user-pagination').innerHTML = '';
         return;
     }
@@ -333,10 +272,7 @@ export function renderUsers(res) {
 }
 
 export function renderStatusSubmissionForm(res) {
-    const personnel = res.personnel;
-    const submissionStatus = res.submission_status;
-    const weekly_date_range = res.weekly_date_range;
-    const persistent_statuses = res.persistent_statuses || [];
+    const { personnel, submission_status, weekly_date_range, persistent_statuses = [], all_departments = [] } = res;
 
     const selectorContainer = document.getElementById('admin-dept-selector-container');
     const bulkButtonContainer = document.getElementById('bulk-status-buttons');
@@ -345,8 +281,8 @@ export function renderStatusSubmissionForm(res) {
 
     if (!selectorContainer || !bulkButtonContainer || !window.statusSubmissionListArea || !window.submitStatusTitle || !submissionInfoArea || !submissionForm) return;
 
-    if (window.currentUser.role !== 'admin' && submissionStatus && !window.editingReportData) {
-        const submittedTime = new Date(submissionStatus.timestamp).toLocaleString('th-TH');
+    if (window.currentUser.role !== 'admin' && submission_status && !window.editingReportData) {
+        const submittedTime = new Date(submission_status.timestamp).toLocaleString('th-TH');
         submissionInfoArea.innerHTML = `คุณได้ส่งยอดสำหรับรอบนี้ไปแล้วเมื่อ ${submittedTime} น.`;
         submissionInfoArea.classList.remove('hidden');
         submissionForm.classList.add('hidden');
@@ -500,7 +436,6 @@ export function renderStatusSubmissionForm(res) {
 
     if (window.currentUser.role === 'admin') {
         selectorContainer.innerHTML = '';
-        const uniqueDepts = [...new Set(personnel.map(p => p.department))];
         const label = document.createElement('label');
         label.htmlFor = 'admin-dept-selector';
         label.className = 'block text-sm font-medium text-gray-700 mb-1';
@@ -509,9 +444,9 @@ export function renderStatusSubmissionForm(res) {
         selector.id = 'admin-dept-selector';
         selector.className = 'w-full md:w-1/3 border rounded px-2 py-2 bg-white shadow-sm';
         
-        let currentDept = window.editingReportData ? window.editingReportData.department : (uniqueDepts.length > 0 ? uniqueDepts[0] : '');
+        let currentDept = window.editingReportData ? window.editingReportData.department : (all_departments.length > 0 ? all_departments[0] : '');
 
-        uniqueDepts.forEach(dept => {
+        all_departments.forEach(dept => {
             const option = document.createElement('option');
             option.value = dept;
             option.textContent = dept;
@@ -564,16 +499,7 @@ export function addStatusRow(clickedButton) {
         </td>
     `;
 
-    // Find the last row for this person and insert after it
-    let lastRowForPerson = mainRow;
-    let nextSibling = mainRow.nextElementSibling;
-    while (nextSibling && nextSibling.dataset.personnelId === mainRow.dataset.personnelId) {
-        lastRowForPerson = nextSibling;
-        nextSibling = nextSibling.nextElementSibling;
-    }
-    
-    lastRowForPerson.parentNode.insertBefore(newRow, lastRowForPerson.nextSibling);
-
+    mainRow.parentNode.insertBefore(newRow, mainRow.nextSibling);
 
     const flatpickrConfig = {
         locale: thai_locale, 
@@ -725,7 +651,7 @@ export function renderFilteredHistoryReports(reports) {
         reportWrapper.innerHTML = `
             <div class="flex flex-wrap justify-between items-center mb-3 gap-2">
                 <div>
-                    <h4 class="text-lg font-semibold text-gray-700">รายงานวันที่ ${formatThaiDateArabic(report.date)}</h4>
+                    <h4 class="text-lg font-semibold text-gray-800">รายงานวันที่ ${formatThaiDateArabic(report.date)}</h4>
                     <span class="text-sm text-gray-500">ส่งเมื่อ: ${new Date(report.timestamp).toLocaleString('th-TH')}</span>
                 </div>
                 ${editButtonHtml}
@@ -793,50 +719,6 @@ export function renderArchivedReports(reports) {
 export function openPersonnelModal(person = null) {
     window.personnelForm.reset();
     const title = window.personnelForm.querySelector('#personnel-modal-title');
-    const rankSelect = window.personnelForm.querySelector('#person-rank');
-    const typeSelect = window.personnelForm.querySelector('#person-type');
-
-    const updateTypeField = () => {
-        const selectedRank = rankSelect.value;
-        
-        // Temporarily show all options to manipulate them
-        for (const option of typeSelect.options) {
-            option.hidden = false;
-        }
-
-        if (CIVILIAN_RANKS.includes(selectedRank)) {
-            typeSelect.disabled = false;
-            typeSelect.classList.remove('bg-gray-200');
-            // Hide military types
-            typeSelect.querySelector('option[value="สัญญาบัตร"]').hidden = true;
-            typeSelect.querySelector('option[value="ประทวน"]').hidden = true;
-            
-            // If the current selection is a hidden military type, default to a civilian one
-            if (['สัญญาบัตร', 'ประทวน'].includes(typeSelect.value)) {
-                typeSelect.value = 'พนักงานราชการ';
-            }
-
-        } else {
-            typeSelect.disabled = true;
-            typeSelect.classList.add('bg-gray-200');
-            // Hide civilian types
-            typeSelect.querySelector('option[value="พนักงานราชการ"]').hidden = true;
-            typeSelect.querySelector('option[value="ลูกจ้างประจำ"]').hidden = true;
-            
-            if (COMMISSIONED_RANKS.includes(selectedRank)) {
-                typeSelect.value = 'สัญญาบัตร';
-            } else { // Includes non-commissioned and empty/other ranks
-                typeSelect.value = 'ประทวน';
-            }
-        }
-    };
-    
-    // Ensure the event listener is not added multiple times
-    if (!rankSelect.hasAttribute('data-listener-added')) {
-        rankSelect.addEventListener('change', updateTypeField);
-        rankSelect.setAttribute('data-listener-added', 'true');
-    }
-
     if (person) {
         title.textContent = 'แก้ไขข้อมูลกำลังพล';
         window.personnelForm.querySelector('#person-id').value = person.id;
@@ -846,15 +728,10 @@ export function openPersonnelModal(person = null) {
         window.personnelForm.querySelector('#person-position').value = person.position;
         window.personnelForm.querySelector('#person-specialty').value = person.specialty;
         window.personnelForm.querySelector('#person-department').value = person.department;
-        window.personnelForm.querySelector('#person-type').value = person.personnel_type;
     } else {
         title.textContent = 'เพิ่มข้อมูลกำลังพล';
         window.personnelForm.querySelector('#person-id').value = '';
     }
-    
-    // Call it once to set the initial state when the modal opens
-    updateTypeField();
-
     window.personnelModal.classList.add('active');
 }
 
@@ -1105,4 +982,3 @@ export function renderActiveStatuses(res) {
     // Render the initial view with 'ทั้งหมด' filter
     updateActiveStatusesView('ทั้งหมด');
 }
-

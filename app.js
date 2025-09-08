@@ -13,7 +13,7 @@ window.allArchivedReports = {};
 window.allHistoryData = {};
 window.personnelCurrentPage = 1;
 window.userCurrentPage = 1;
-window.editingReportData = null;
+window.holidayDatepicker = null; // To store the holiday datepicker instance
 
 // --- Auto Logout Feature ---
 let inactivityTimer;
@@ -38,55 +38,55 @@ function resetInactivityTimer() {
 }
 
 // DOM Elements
-function assignDomElements() {
-    window.appContainer = document.getElementById('app-container');
-    window.messageArea = document.getElementById('message-area');
-    window.welcomeMessage = document.getElementById('welcome-message');
-    window.logoutBtn = document.getElementById('logout-btn');
-    window.tabs = document.querySelectorAll('.tab-button');
-    window.panes = document.querySelectorAll('.tab-pane');
-    
-    // Elements for Weekly Reporting System (main.html and admin.html)
-    window.statusSubmissionListArea = document.getElementById('status-submission-list-area');
-    window.submitStatusTitle = document.getElementById('submit-status-title');
-    window.submissionFormSection = document.getElementById('submission-form-section');
-    window.reviewReportSection = document.getElementById('review-report-section');
-    window.reviewListArea = document.getElementById('review-list-area');
-    window.backToFormBtn = document.getElementById('back-to-form-btn');
-    window.confirmSubmitBtn = document.getElementById('confirm-submit-btn');
-    window.reviewStatusBtn = document.getElementById('review-status-btn');
-    window.reportContainer = document.getElementById('report-container');
-    window.exportArchiveBtn = document.getElementById('export-archive-btn');
-    window.archiveContainer = document.getElementById('archive-container');
-    window.archiveYearSelect = document.getElementById('archive-year-select');
-    window.archiveMonthSelect = document.getElementById('archive-month-select');
-    window.showArchiveBtn = document.getElementById('show-archive-btn');
-    window.archiveConfirmModal = document.getElementById('archive-confirm-modal');
-    window.cancelArchiveBtn = document.getElementById('cancel-archive-btn');
-    window.confirmArchiveBtn = document.getElementById('confirm-archive-btn');
-    window.historyContainer = document.getElementById('history-container');
-    window.historyYearSelect = document.getElementById('history-year-select');
-    window.historyMonthSelect = document.getElementById('history-month-select');
-    window.showHistoryBtn = document.getElementById('show-history-btn');
-    window.activeStatusesContainer = document.getElementById('active-statuses-container');
-    
-    // Elements for Admin Page (admin.html)
-    window.personnelListArea = document.getElementById('personnel-list-area');
-    window.addPersonnelBtn = document.getElementById('add-personnel-btn');
-    window.personnelModal = document.getElementById('personnel-modal');
-    window.personnelForm = document.getElementById('personnel-form');
-    window.cancelPersonnelBtn = document.getElementById('cancel-personnel-btn');
-    window.importExcelBtn = document.getElementById('import-excel-btn');
-    window.excelImportInput = document.getElementById('excel-import-input');
-    window.userListArea = document.getElementById('user-list-area');
-    window.addUserBtn = document.getElementById('add-user-btn');
-    window.userModal = document.getElementById('user-modal');
-    window.userForm = document.getElementById('user-form');
-    window.cancelUserBtn = document.getElementById('cancel-user-btn');
-    window.userModalTitle = document.getElementById('user-modal-title');
-    window.personnelSearchInput = document.getElementById('personnel-search-input');
-    window.userSearchInput = document.getElementById('user-search-input');
-}
+window.appContainer = null;
+window.messageArea = null;
+window.welcomeMessage = null;
+window.logoutBtn = null;
+window.tabs = null;
+window.panes = null;
+window.statusSubmissionListArea = null;
+window.submitStatusTitle = null;
+window.submissionFormSection = null;
+window.reviewReportSection = null;
+window.reviewListArea = null;
+window.backToFormBtn = null;
+window.confirmSubmitBtn = null;
+window.reviewStatusBtn = null;
+window.reportContainer = null;
+window.exportArchiveBtn = null;
+window.archiveContainer = null;
+window.archiveYearSelect = null;
+window.archiveMonthSelect = null;
+window.showArchiveBtn = null;
+window.archiveConfirmModal = null;
+window.cancelArchiveBtn = null;
+window.confirmArchiveBtn = null;
+window.personnelListArea = null;
+window.addPersonnelBtn = null;
+window.personnelModal = null;
+window.personnelForm = null;
+window.cancelPersonnelBtn = null;
+window.importExcelBtn = null;
+window.excelImportInput = null;
+window.userListArea = null;
+window.addUserBtn = null;
+window.userModal = null;
+window.userForm = null;
+window.cancelUserBtn = null;
+window.userModalTitle = null;
+window.personnelSearchInput = null;
+window.personnelSearchBtn = null;
+window.userSearchInput = null;
+window.userSearchBtn = null;
+window.historyContainer = null;
+window.historyYearSelect = null;
+window.historyMonthSelect = null;
+window.showHistoryBtn = null;
+window.activeStatusesContainer = null;
+window.mainNav = null;
+window.mainTitle = null;
+window.holidayForm = null;
+window.holidayListContainer = null;
 
 // --- Main Initialization ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -104,8 +104,62 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
     
+    ui.populateRankDropdowns();
     initializePage();
 });
+
+function assignDomElements() {
+    window.appContainer = document.getElementById('app-container');
+    window.messageArea = document.getElementById('message-area');
+    window.welcomeMessage = document.getElementById('welcome-message');
+    window.logoutBtn = document.getElementById('logout-btn');
+    window.tabs = document.querySelectorAll('.tab-button');
+    window.panes = document.querySelectorAll('.tab-pane');
+    window.statusSubmissionListArea = document.getElementById('status-submission-list-area');
+    window.submitStatusTitle = document.getElementById('submit-status-title');
+    window.submissionFormSection = document.getElementById('submission-form-section');
+    window.reviewReportSection = document.getElementById('review-report-section');
+    window.reviewListArea = document.getElementById('review-list-area');
+    window.backToFormBtn = document.getElementById('back-to-form-btn');
+    window.confirmSubmitBtn = document.getElementById('confirm-submit-btn');
+    window.reviewStatusBtn = document.getElementById('review-status-btn');
+    window.reportContainer = document.getElementById('report-container');
+    window.exportArchiveBtn = document.getElementById('export-archive-btn');
+    window.archiveContainer = document.getElementById('archive-container');
+    window.archiveYearSelect = document.getElementById('archive-year-select');
+    window.archiveMonthSelect = document.getElementById('archive-month-select');
+    window.showArchiveBtn = document.getElementById('show-archive-btn');
+    window.archiveConfirmModal = document.getElementById('archive-confirm-modal');
+    window.cancelArchiveBtn = document.getElementById('cancel-archive-btn');
+    window.confirmArchiveBtn = document.getElementById('confirm-archive-btn');
+    window.personnelListArea = document.getElementById('personnel-list-area');
+    window.addPersonnelBtn = document.getElementById('add-personnel-btn');
+    window.personnelModal = document.getElementById('personnel-modal');
+    window.personnelForm = document.getElementById('personnel-form');
+    window.cancelPersonnelBtn = document.getElementById('cancel-personnel-btn');
+    window.importExcelBtn = document.getElementById('import-excel-btn');
+    window.excelImportInput = document.getElementById('excel-import-input');
+    window.userListArea = document.getElementById('user-list-area');
+    window.addUserBtn = document.getElementById('add-user-btn');
+    window.userModal = document.getElementById('user-modal');
+    window.userForm = document.getElementById('user-form');
+    window.cancelUserBtn = document.getElementById('cancel-user-btn');
+    window.userModalTitle = document.getElementById('user-modal-title');
+    window.personnelSearchInput = document.getElementById('personnel-search-input');
+    window.personnelSearchBtn = document.getElementById('personnel-search-btn');
+    window.userSearchInput = document.getElementById('user-search-input');
+    window.userSearchBtn = document.getElementById('user-search-btn');
+    window.historyContainer = document.getElementById('history-container');
+    window.historyYearSelect = document.getElementById('history-year-select');
+    window.historyMonthSelect = document.getElementById('history-month-select');
+    window.showHistoryBtn = document.getElementById('show-history-btn');
+    window.activeStatusesContainer = document.getElementById('active-statuses-container');
+    window.mainNav = document.getElementById('main-nav');
+    window.mainTitle = document.getElementById('main-title');
+    window.holidayForm = document.getElementById('holiday-form');
+    window.holidayListContainer = document.getElementById('holiday-list-container');
+}
+
 
 function initializePage() {
     appContainer.classList.remove('hidden');
@@ -120,18 +174,44 @@ function initializePage() {
 
     const is_admin = (userRole === 'admin');
     
-    // Determine which page we are on
-    const onAdminPage = !!document.getElementById('pane-personnel');
+    const urlParams = new URLSearchParams(window.location.search);
+    const view = urlParams.get('view');
 
-    if (onAdminPage) {
-       // This logic is now in admin.js
-    } else { // On main.html
+    if (is_admin && view) {
+        mainNav.classList.add('hidden');
+        panes.forEach(pane => pane.classList.add('hidden'));
+
+        let targetPaneId, titleText;
+        if (view === 'personnel') {
+            targetPaneId = 'pane-personnel';
+            titleText = 'จัดการกำลังพล';
+        } else if (view === 'users') {
+            targetPaneId = 'pane-admin';
+            titleText = 'จัดการผู้ใช้';
+        } else if (view === 'holidays') {
+            targetPaneId = 'pane-holidays';
+            titleText = 'จัดการวันหยุด';
+        }
+
+        if (targetPaneId) {
+            mainTitle.textContent = titleText;
+            const targetPane = document.getElementById(targetPaneId);
+            if (targetPane) {
+                targetPane.classList.remove('hidden');
+                loadDataForPane(targetPaneId);
+            }
+        }
+    } else {
+        mainNav.classList.remove('hidden');
+        mainTitle.textContent = 'ระบบรายงานยอดกำลังพลประจำสัปดาห์';
+        
         document.getElementById('tab-dashboard').classList.toggle('hidden', !is_admin);
         document.getElementById('tab-active-statuses').classList.remove('hidden');
         document.getElementById('tab-submit-status').classList.remove('hidden');
         document.getElementById('tab-history').classList.remove('hidden');
         document.getElementById('tab-report').classList.toggle('hidden', !is_admin);
         document.getElementById('tab-archive').classList.toggle('hidden', !is_admin);
+        
         if (is_admin) {
             switchTab('tab-dashboard');
         } else {
@@ -147,8 +227,16 @@ function initializePage() {
     resetInactivityTimer();
 
     tabs.forEach(tab => tab.addEventListener('click', () => switchTab(tab.id)));
-    
-    // Event listeners for weekly reporting system
+    if(addPersonnelBtn) addPersonnelBtn.addEventListener('click', () => ui.openPersonnelModal());
+    if(cancelPersonnelBtn) cancelPersonnelBtn.addEventListener('click', () => personnelModal.classList.remove('active'));
+    if(personnelForm) personnelForm.addEventListener('submit', handlers.handlePersonnelFormSubmit);
+    if(personnelListArea) personnelListArea.addEventListener('click', handlers.handlePersonnelListClick);
+    if(addUserBtn) addUserBtn.addEventListener('click', () => ui.openUserModal());
+    if(cancelUserBtn) cancelUserBtn.addEventListener('click', () => userModal.classList.remove('active'));
+    if(userForm) userForm.addEventListener('submit', handlers.handleUserFormSubmit);
+    if(userListArea) userListArea.addEventListener('click', handlers.handleUserListClick);
+    if(importExcelBtn) importExcelBtn.addEventListener('click', () => excelImportInput.click());
+    if(excelImportInput) excelImportInput.addEventListener('change', handlers.handleExcelImport);
     if (reviewStatusBtn) reviewStatusBtn.addEventListener('click', handlers.handleReviewStatus);
     if (backToFormBtn) backToFormBtn.addEventListener('click', () => {
         reviewReportSection.classList.add('hidden');
@@ -167,6 +255,23 @@ function initializePage() {
     
     if (showArchiveBtn) showArchiveBtn.addEventListener('click', handlers.handleShowArchive);
     if (archiveContainer) archiveContainer.addEventListener('click', handlers.handleArchiveDownloadClick);
+    
+    if (personnelSearchBtn) {
+        const searchPersonnel = () => {
+            window.personnelCurrentPage = 1;
+            loadDataForPane('pane-personnel');
+        };
+        personnelSearchBtn.addEventListener('click', searchPersonnel);
+        personnelSearchInput.addEventListener('keyup', (e) => { if (e.key === 'Enter') searchPersonnel(); });
+    }
+    if (userSearchBtn) {
+        const searchUser = () => {
+            window.userCurrentPage = 1;
+            loadDataForPane('pane-admin');
+        };
+        userSearchBtn.addEventListener('click', searchUser);
+        userSearchInput.addEventListener('keyup', (e) => { if (e.key === 'Enter') searchUser(); });
+    }
     
     if (archiveYearSelect) {
         archiveYearSelect.addEventListener('change', () => {
@@ -208,7 +313,7 @@ function initializePage() {
     if (statusSubmissionListArea) {
         statusSubmissionListArea.addEventListener('click', function(e) {
             if (e.target && e.target.classList.contains('add-status-btn')) {
-                ui.addStatusRow(e.target);
+                addStatusRow(e.target);
             }
             if (e.target && e.target.classList.contains('remove-status-btn')) {
                 const subRow = e.target.closest('tr');
@@ -218,6 +323,20 @@ function initializePage() {
             }
         });
     }
+
+    // *** NEW: Holiday Management Event Listeners ***
+    if (holidayForm) {
+        window.holidayDatepicker = flatpickr("#holiday-date", {
+            locale: ui.thai_locale,
+            altInput: true,
+            altFormat: "j F Y",
+            dateFormat: "Y-m-d",
+        });
+        holidayForm.addEventListener('submit', handlers.handleAddHoliday);
+    }
+    if (holidayListContainer) {
+        holidayListContainer.addEventListener('click', handlers.handleDeleteHoliday);
+    }
 }
 
 // --- Data Loading and Tab Switching ---
@@ -226,6 +345,8 @@ window.loadDataForPane = async function(paneId) {
     const actions = {
         'pane-dashboard': { action: 'get_dashboard_summary', renderer: ui.renderDashboard },
         'pane-active-statuses': { action: 'get_active_statuses', renderer: ui.renderActiveStatuses },
+        'pane-personnel': { action: 'list_personnel', renderer: ui.renderPersonnel, searchInput: personnelSearchInput, pageState: 'personnelCurrentPage' },
+        'pane-admin': { action: 'list_users', renderer: ui.renderUsers, searchInput: userSearchInput, pageState: 'userCurrentPage' },
         'pane-submit-status': { action: 'list_personnel', renderer: ui.renderStatusSubmissionForm, fetchAll: true },
         'pane-history': { action: 'get_submission_history', renderer: ui.renderSubmissionHistory },
         'pane-report': { action: 'get_status_reports', renderer: ui.renderWeeklyReport },
@@ -234,12 +355,22 @@ window.loadDataForPane = async function(paneId) {
             window.allArchivedReports = archives || {};
             ui.populateArchiveSelectors(window.allArchivedReports);
             if(window.archiveContainer) window.archiveContainer.innerHTML = '';
-        }}
+        }},
+        'pane-holidays': { action: 'list_holidays', renderer: handlers.renderHolidays },
     };
 
     const paneConfig = actions[paneId];
-    if (!paneConfig) return;
+    if (!paneConfig) {
+        console.error("No config for pane:", paneId);
+        return;
+    };
 
+    if (paneConfig.searchInput) {
+        payload.searchTerm = paneConfig.searchInput.value;
+    }
+    if (paneConfig.pageState) {
+        payload.page = window[paneConfig.pageState];
+    }
     if (paneConfig.fetchAll) {
         payload.fetchAll = true;
     }
@@ -266,28 +397,19 @@ window.loadDataForPane = async function(paneId) {
 }
 
 window.switchTab = function(tabId) {
-    const clickedTab = document.getElementById(tabId);
-    if (!clickedTab) return;
-    const paneId = tabId.replace('tab-', 'pane-');
-
-    // If the clicked tab is already active, just reload its data.
-    if (clickedTab.classList.contains('active')) {
-        loadDataForPane(paneId);
-        return; 
-    }
-
-    // If a different tab is clicked, switch tabs.
     tabs.forEach(tab => {
-        const currentPaneId = tab.id.replace('tab-', 'pane-');
-        const pane = document.getElementById(currentPaneId);
+        const paneId = tab.id.replace('tab-', 'pane-');
+        const pane = document.getElementById(paneId);
         if(!pane) return;
-
-        const isActive = (tab.id === tabId);
-        tab.classList.toggle('active', isActive);
-        pane.classList.toggle('hidden', !isActive);
+        if (tab.id === tabId) {
+            tab.classList.add('active');
+            pane.classList.remove('hidden');
+            if (paneId === 'pane-personnel') window.personnelCurrentPage = 1;
+            if (paneId === 'pane-admin') window.userCurrentPage = 1;
+            loadDataForPane(paneId);
+        } else {
+            tab.classList.remove('active');
+            pane.classList.add('hidden');
+        }
     });
-    
-    // Load data for the newly activated tab
-    loadDataForPane(paneId);
 }
-

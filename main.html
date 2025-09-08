@@ -22,18 +22,18 @@
         
         <article id="app-container" class="hidden bg-white p-8 rounded-xl shadow-lg">
             
-<header class="flex flex-wrap justify-between items-center mb-6 border-b pb-4 gap-4">
-    <div>
-        <h1 class="text-2xl font-bold text-gray-800">ระบบรายงานยอดกำลังพลประจำสัปดาห์ (เฉพาะสัญญาบัตร)</h1>
-        <p id="welcome-message" class="text-gray-600"></p>
-    </div>
-    <div class="flex space-x-2">
-        <button id="back-to-selection-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded-lg">กลับสู่หน้าเลือกเมนู</button>
-        <button id="logout-btn" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg">ออกจากระบบ</button>
-    </div>
-</header>
+            <header class="flex flex-wrap justify-between items-center mb-6 border-b pb-4 gap-4">
+                <div>
+                    <h1 id="main-title" class="text-2xl font-bold text-gray-800">ระบบรายงานยอดกำลังพลประจำสัปดาห์</h1>
+                    <p id="welcome-message" class="text-gray-600"></p>
+                </div>
+                <div class="flex space-x-2">
+                    <button id="back-to-selection-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded-lg">กลับสู่หน้าเลือกเมนู</button>
+                    <button id="logout-btn" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg">ออกจากระบบ</button>
+                </div>
+            </header>
             
-            <nav class="mb-4 border-b border-gray-200">
+            <nav id="main-nav" class="mb-4 border-b border-gray-200">
                 <div class="flex space-x-4 overflow-x-auto pb-2" aria-label="Tabs">
                     <button id="tab-dashboard" class="tab-button hidden whitespace-nowrap py-2 px-4 text-sm font-medium text-gray-500 hover:text-blue-600 border-b-2 border-transparent">แดชบอร์ด</button>
                     <button id="tab-active-statuses" class="tab-button hidden whitespace-nowrap py-2 px-4 text-sm font-medium text-gray-500 hover:text-blue-600 border-b-2 border-transparent">สถานะกำลังพล</button>
@@ -53,7 +53,7 @@
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                         <div class="bg-blue-50 p-4 rounded-lg shadow">
-                            <h3 class="font-semibold text-blue-800">กำลังพลทั้งหมด (เฉพาะสัญญาบัตร)</h3>
+                            <h3 class="font-semibold text-blue-800">กำลังพลทั้งหมด</h3>
                             <p id="dashboard-total-personnel" class="text-3xl font-bold text-blue-600">-</p>
                         </div>
                         <div class="bg-green-50 p-4 rounded-lg shadow">
@@ -185,11 +185,73 @@
                     </div>
                     <div id="archive-container"></div>
                 </section>
+
+                <!-- Personnel Management Pane (Stays in HTML but is hidden) -->
+                <section id="pane-personnel" class="tab-pane hidden">
+                    <div class="flex flex-wrap justify-between items-center mb-6 gap-4">
+                        <h2 class="text-xl font-semibold">รายชื่อกำลังพล</h2>
+                        <div class="flex items-center space-x-2">
+                            <input type="text" id="personnel-search-input" placeholder="ค้นหา..." class="border rounded px-2 py-1 w-40">
+                            <button id="personnel-search-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-3 rounded-lg">ค้นหา</button>
+                        </div>
+                        <div class="flex space-x-2">
+                            <input type="file" id="excel-import-input" class="hidden" accept=".xlsx, .xls">
+                            <button id="import-excel-btn" class="bg-teal-500 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-lg">นำเข้า Excel</button>
+                            <button id="add-personnel-btn" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">เพิ่มกำลังพล</button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto"><table class="min-w-full bg-white"><thead class="bg-gray-50"><tr><th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">ลำดับ</th><th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">ยศ</th><th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">ชื่อ</th><th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">นามสกุล</th><th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">ตำแหน่ง</th><th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">เหล่า</th><th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">แผนก</th><th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">จัดการ</th></tr></thead><tbody id="personnel-list-area" class="bg-white divide-y divide-gray-200"></tbody></table></div>
+                    <div id="personnel-pagination" class="mt-4 flex justify-between items-center"></div>
+                </section>
+
+                <!-- User Management Pane (Stays in HTML but is hidden) -->
+                <section id="pane-admin" class="tab-pane hidden">
+                     <div class="flex flex-wrap justify-between items-center mb-6 gap-4">
+                        <h2 class="text-xl font-semibold">รายชื่อผู้ใช้งานระบบ</h2>
+                        <div class="flex items-center space-x-2">
+                            <input type="text" id="user-search-input" placeholder="ค้นหา..." class="border rounded px-2 py-1 w-40">
+                            <button id="user-search-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-3 rounded-lg">ค้นหา</button>
+                        </div>
+                        <button id="add-user-btn" class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg">เพิ่มผู้ใช้</button>
+                     </div>
+                     <div class="overflow-x-auto"><table class="min-w-full bg-white"><thead class="bg-gray-50"><tr><th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Username</th><th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">ยศ-ชื่อ-สกุล</th><th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">ตำแหน่ง</th><th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">แผนก</th><th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">สิทธิ์</th><th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">จัดการ</th></tr></thead><tbody id="user-list-area" class="bg-white divide-y divide-gray-200"></tbody></table></div>
+                     <div id="user-pagination" class="mt-4 flex justify-between items-center"></div>
+                </section>
+                <section id="pane-holidays" class="tab-pane hidden">
+    <h2 class="text-xl font-semibold mb-4">จัดการวันหยุดนักขัตฤกษ์</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="md:col-span-1">
+            <form id="holiday-form" class="bg-gray-50 p-6 rounded-lg border">
+                <h3 class="text-lg font-medium mb-4">เพิ่มวันหยุดใหม่</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label for="holiday-date" class="block text-sm font-medium text-gray-700">วันที่</label>
+                        <input type="text" id="holiday-date" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required placeholder="เลือกวันที่...">
+                    </div>
+                    <div>
+                        <label for="holiday-description" class="block text-sm font-medium text-gray-700">รายละเอียด</label>
+                        <input type="text" id="holiday-description" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required placeholder="เช่น วันปีใหม่">
+                    </div>
+                </div>
+                <div class="mt-6">
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">เพิ่มวันหยุด</button>
+                </div>
+            </form>
+        </div>
+        <div class="md:col-span-2">
+             <div id="holiday-list-container" class="overflow-y-auto" style="max-height: 60vh;">
+                </div>
+        </div>
+    </div>
+</section>
             </main>
             
         </article>
     </div>
     <!-- Modals -->
+    <div id="personnel-modal" class="modal fixed inset-0 bg-gray-600 bg-opacity-50 z-20"><div class="relative mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white"><form id="personnel-form"><h3 id="personnel-modal-title" class="text-lg font-medium text-gray-900 mb-4">ข้อมูลกำลังพล</h3><input type="hidden" id="person-id"><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label class="block text-sm">ยศ - คำนำหน้า</label><select id="person-rank" class="w-full border rounded px-2 py-1 bg-white" required></select></div><div><label class="block text-sm">ชื่อ</label><input type="text" id="person-first-name" class="w-full border rounded px-2 py-1" required></div><div><label class="block text-sm">นามสกุล</label><input type="text" id="person-last-name" class="w-full border rounded px-2 py-1" required></div><div><label class="block text-sm">เหล่า</label><select id="person-specialty" class="w-full border rounded px-2 py-1 bg-white" required><option value="ชย.">ชย.</option><option value="สบ.">สบ.</option></select></div><div class="md:col-span-2"><label class="block text-sm">ตำแหน่ง</label><input type="text" id="person-position" class="w-full border rounded px-2 py-1" required></div><div class="md:col-span-2"><label class="block text-sm">แผนก</label><select id="person-department" class="w-full border rounded px-2 py-1 bg-white" required><option value="ฝธก.กวก.ชย.ทอ.">ฝธก.กวก.ชย.ทอ.</option><option value="ฝธก.กอบ.กวก.ชย.ทอ.">ฝธก.กอบ.กวก.ชย.ทอ.</option><option value="ผวก.กวก.ชย.ทอ.">ผวก.กวก.ชย.ทอ.</option><option value="ผจง.กวก.ชย.ทอ.">ผจง.กวก.ชย.ทอ.</option><option value="ผตค.กวก.ชย.ทอ.">ผตค.กวก.ชย.ทอ.</option><option value="ผบผ.กอบ.กวก.ชย.ทอ.">ผบผ.กอบ.กวก.ชย.ทอ.</option><option value="ผวคส.กอบ.กวก.ชย.ทอ.">ผวคส.กอบ.กวก.ชย.ทอ.</option><option value="ผวร.กอบ.กวก.ชย.ทอ.">ผวร.กอบ.กวก.ชย.ทอ.</option><option value="ผวยธ.กอบ.กวก.ชย.ทอ.">ผวยธ.กอบ.กวก.ชย.ทอ.</option></select></div></div><div class="items-center px-4 py-3 mt-4 text-right"><button id="cancel-personnel-btn" type="button" class="px-4 py-2 bg-gray-200 rounded-md mr-2">ยกเลิก</button><button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-md">บันทึก</button></div></form></div></div>
+    <div id="user-modal" class="modal fixed inset-0 bg-gray-600 bg-opacity-50 z-20"><div class="relative mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white"><form id="user-form"><h3 id="user-modal-title" class="text-lg font-medium text-gray-900 mb-4">ข้อมูลผู้ใช้งาน</h3><div class="space-y-4"><div><label class="block text-sm">Username</label><input type="text" id="user-username" class="w-full border rounded px-2 py-1" required></div><div><label class="block text-sm">Password <span class="text-xs text-gray-500">(กรอกเพื่อตั้งใหม่)</span></label><input type="password" id="user-password" class="w-full border rounded px-2 py-1"></div><hr><div><label class="block text-sm">ยศ-คำนำหน้า</label><select id="user-rank" class="w-full border rounded px-2 py-1 bg-white" required></select></div><div><label class="block text-sm">ชื่อ</label><input type="text" id="user-first-name" class="w-full border rounded px-2 py-1" required></div><div><label class="block text-sm">นามสกุล</label><input type="text" id="user-last-name" class="w-full border rounded px-2 py-1" required></div><div><label class="block text-sm">ตำแหน่ง</label><input type="text" id="user-position" class="w-full border rounded px-2 py-1" required></div><div><label class="block text-sm">แผนก</label><select id="user-department" class="w-full border rounded px-2 py-1 bg-white" required><option value="ฝธก.กวก.ชย.ทอ.">ฝธก.กวก.ชย.ทอ.</option><option value="ฝธก.กอบ.กวก.ชย.ทอ.">ฝธก.กอบ.กวก.ชย.ทอ.</option><option value="ผวก.กวก.ชย.ทอ.">ผวก.กวก.ชย.ทอ.</option><option value="ผจง.กวก.ชย.ทอ.">ผจง.กวก.ชย.ทอ.</option><option value="ผตค.กวก.ชย.ทอ.">ผตค.กวก.ชย.ทอ.</option><option value="ผบผ.กอบ.กวก.ชย.ทอ.">ผบผ.กอบ.กวก.ชย.ทอ.</option><option value="ผวคส.กอบ.กวก.ชย.ทอ.">ผวคส.กอบ.กวก.ชย.ทอ.</option><option value="ผวร.กอบ.กวก.ชย.ทอ.">ผวร.กอบ.กวก.ชย.ทอ.</option><option value="ผวยธ.กอบ.กวก.ชย.ทอ.">ผวยธ.กอบ.กวก.ชย.ทอ.</option></select></div><div><label class="block text-sm">สิทธิ์การเข้าถึง (Role)</label><select id="user-role" class="w-full border rounded px-2 py-1 bg-white" required><option value="user">User (ดูข้อมูลได้อย่างเดียว)</option><option value="admin">Admin (จัดการได้ทุกอย่าง)</option></select></div></div><div class="items-center px-4 py-3 mt-4 text-right"><button id="cancel-user-btn" type="button" class="px-4 py-2 bg-gray-200 rounded-md mr-2">ยกเลิก</button><button type="submit" class="px-4 py-2 bg-purple-500 text-white rounded-md">บันทึก</button></div></form></div></div>
+    
     <div id="archive-confirm-modal" class="modal fixed inset-0 bg-gray-600 bg-opacity-50 z-20 items-center justify-center">
         <div class="relative bg-white rounded-lg shadow-xl max-w-sm w-full p-6">
             <h3 class="text-xl font-semibold mb-4 text-gray-800">ยืนยันการส่งออกและเก็บรายงาน</h3>
