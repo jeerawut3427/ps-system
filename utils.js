@@ -130,16 +130,17 @@ export function exportSingleReportToExcel(reports, fileName, weekRangeText) {
         const fullName = `${firstName}  ${lastName}`;
         const dateRange = formatThaiDateRangeThai(item.start_date, item.end_date);
         
-        let combinedDetails = item.status;
-        if (item.details) {
-            combinedDetails += ` ${item.details}`; 
-        }
+        // โค้ดใหม่
+    let combinedDetails = toThaiNumerals(item.status); // แปลง status
+    if (item.details) {
+    combinedDetails += ` ${toThaiNumerals(item.details)}`; // แปลง details
+}
         combinedDetails += ` (${dateRange})`;
 
         dataForExport.push({
             'ลำดับ': toThaiNumerals(index + 1),
-            'ชื่อ': fullName,
-            'ยศ': rank,
+            'ยศ': rank, // <-- สลับตำแหน่งข้อมูล
+            'ชื่อ': fullName, // <-- สลับตำแหน่งข้อมูล
             'สภาพการณ์หรือการเปลี่ยนแปลง': combinedDetails,
             'หมายเหตุ': ''
         });
@@ -167,14 +168,16 @@ export function exportSingleReportToExcel(reports, fileName, weekRangeText) {
     const ws_data = [
         ["บัญชีรายชื่อ น.สัญญาบัตรที่ไปราชการ, คุมงาน, ศึกษา, ลากิจ และลาพักผ่อน ประจำสัปดาห์ของ กวก.ชย.ทอ."],
         [dateRangeString],
-        ["ลำดับ", "ชื่อ", "ยศ", "สภาพการณ์หรือการเปลี่ยนแปลง", "หมายเหตุ"]
+        // --- ↓ จุดที่ 1: สลับตำแหน่งหัวตาราง ---
+        ["ลำดับ", "ยศ", "ชื่อ", "สภาพการณ์หรือการเปลี่ยนแปลง", "หมายเหตุ"]
     ];
 
     dataForExport.forEach(row => {
+        // --- ↓ จุดที่ 2: สลับตำแหน่งข้อมูลในแถว ---
         ws_data.push([
             row['ลำดับ'],
-            row['ชื่อ'],
             row['ยศ'],
+            row['ชื่อ'],
             row['สภาพการณ์หรือการเปลี่ยนแปลง'],
             row['หมายเหตุ']
         ]);
@@ -187,10 +190,11 @@ export function exportSingleReportToExcel(reports, fileName, weekRangeText) {
         { s: { r: 1, c: 0 }, e: { r: 1, c: 4 } }  // A2-E2
     ];
 
+    // --- ↓ จุดที่ 3: สลับความกว้างของคอลัมน์ ---
     ws['!cols'] = [
         { wch: 10 }, // ลำดับ
-        { wch: 40 }, // ชื่อ
         { wch: 20 }, // ยศ
+        { wch: 40 }, // ชื่อ
         { wch: 60 }, // สภาพการณ์หรือการเปลี่ยนแปลง
         { wch: 20 }  // หมายเหตุ
     ];

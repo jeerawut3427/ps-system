@@ -693,26 +693,65 @@ export function populateArchiveSelectors(archives) {
 export function renderArchivedReports(reports) {
     if(!window.archiveContainer) return;
     window.archiveContainer.innerHTML = '';
+
+    // reports ตอนนี้คือ list ของ "รอบการเก็บ" (archive batches)
     if (!reports || reports.length === 0) {
         window.archiveContainer.innerHTML = createEmptyState('ไม่พบรายงานที่เก็บถาวรสำหรับเดือนที่เลือก');
         return;
     }
-    const reportsByDate = reports.reduce((acc, report) => {
-        const date = report.date;
-        if (!acc[date]) acc[date] = [];
-        acc[date].push(report);
-        return acc;
-    }, {});
-    Object.keys(reportsByDate).sort((a, b) => new Date(b) - new Date(a)).forEach(date => {
-        const dateCard = document.createElement('div');
-        dateCard.className = 'mb-6 p-4 border rounded-lg bg-gray-50';
-        let reportsHtml = '';
-        reportsByDate[date].forEach(report => {
-            const itemsHtml = report.items.map((item, index) => `<tr class="border-t"><td class="py-2 pr-2 text-center">${index + 1}</td><td class="py-2 px-2">${escapeHTML(item.personnel_name)}</td><td class="py-2 px-2 text-blue-600">${escapeHTML(item.status)}</td><td class="py-2 px-2 text-gray-600">${escapeHTML(item.details) || '-'}</td><td class="py-2 pl-2 text-gray-600">${formatThaiDateRangeArabic(item.start_date, item.end_date)}</td></tr>`).join('');
-            reportsHtml += `<div class="mt-4"><div class="flex justify-between items-center text-sm text-gray-500 mb-2"><span>แผนก: ${escapeHTML(report.department || '')}</span><span>ส่งโดย: ${escapeHTML(report.submitted_by)}</span></div><table class="min-w-full bg-white text-sm"><thead><tr><th class="text-center font-medium text-gray-500 uppercase pb-1 w-[5%]">ลำดับ</th><th class="text-left font-medium text-gray-500 uppercase pb-1 w-[30%]">ชื่อ-สกุล</th><th class="text-left font-medium text-gray-500 uppercase pb-1 w-[15%]">สถานะ</th><th class="text-left font-medium text-gray-500 uppercase pb-1 w-[30%]">รายละเอียด</th><th class="text-left font-medium text-gray-500 uppercase pb-1 w-[20%]">ช่วงวันที่</th></tr></thead><tbody>${itemsHtml}</tbody></table></div>`;
+
+    reports.forEach(batch => {
+        const archiveWrapper = document.createElement('div');
+        archiveWrapper.className = 'mb-6 p-4 border rounded-lg bg-gray-50';
+
+        const submittedTime = new Date(batch.timestamp).toLocaleString('th-TH', { dateStyle: 'full', timeStyle: 'short' });
+        const archivedBy = batch.archived_by || 'ไม่ระบุ';
+
+        // สร้าง HTML สำหรับรายงานของแต่ละแผนกที่อยู่ในรอบนั้นๆ
+        let reportsHtml = batch.reports.map(report => {
+            const itemsHtml = report.items.map((item, index) => 
+                `<tr class="border-t">
+                    <td class="py-2 pr-2 text-center">${index + 1}</td>
+                    <td class="py-2 px-2">${escapeHTML(item.personnel_name)}</td>
+                    <td class="py-2 px-2">${escapeHTML(item.status)}: ${escapeHTML(item.details) || '-'}</td>
+                    <td class="py-2 pl-2">${formatThaiDateRangeArabic(item.start_date, item.end_date)}</td>
+                </tr>`
+            ).join('');
+
+            return `<div class="mt-4">
+                <div class="flex justify-between items-center text-sm text-gray-600 mb-2 p-2 bg-gray-100 rounded-t-md">
+                    <strong>แผนก: ${escapeHTML(report.department)}</strong>
+                    <span>(ส่งโดย: ${escapeHTML(report.rank)} ${escapeHTML(report.first_name)})</span>
+                </div>
+                <table class="min-w-full bg-white text-sm">
+                    <thead><tr>
+                        <th class="w-[5%]"></th>
+                        <th class="w-[35%]"></th>
+                        <th class="w-[40%]"></th>
+                        <th class="w-[20%]"></th>
+                    </tr></thead>
+                    <tbody>${itemsHtml || '<tr><td colspan="4" class="text-center py-3 text-gray-500">ไม่มีกำลังพลที่ติดภารกิจในรอบนี้</td></tr>'}</tbody>
+                </table>
+            </div>`;
+        }).join('');
+
+        archiveWrapper.innerHTML = `
+            <div class="flex flex-wrap justify-between items-center gap-2">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-800">รายงานประจำสัปดาห์ (${escapeHTML(batch.week_range)})</h3>
+                    <p class="text-sm text-gray-500">เก็บเข้าระบบเมื่อ: ${submittedTime} น. (โดย: ${escapeHTML(archivedBy)})</p>
+                </div>
+                <button class="download-archive-batch-btn bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg">ดาวน์โหลดรายงานรอบนี้</button>
+            </div>
+            <div class="mt-4 space-y-4">${reportsHtml}</div>
+        `;
+
+        // เพิ่ม Event Listener ให้กับปุ่มดาวน์โหลดของรอบนี้โดยเฉพาะ
+        archiveWrapper.querySelector('.download-archive-batch-btn').addEventListener('click', () => {
+            exportSingleReportToExcel(batch.reports, `รายงานย้อนหลัง-${batch.week_range}.xlsx`, batch.week_range);
         });
-        dateCard.innerHTML = `<div class="flex justify-between items-center"><h3 class="text-lg font-semibold text-gray-800">ประวัติการเก็บรายงาน วันที่ ${formatThaiDateArabic(date)}</h3><button class="download-daily-archive-btn bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs py-1 px-2 rounded" data-date="${escapeHTML(date)}">ดาวน์โหลดของวันนี้</button></div>${reportsHtml}`;
-        window.archiveContainer.appendChild(dateCard);
+
+        window.archiveContainer.appendChild(archiveWrapper);
     });
 }
 

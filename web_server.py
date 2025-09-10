@@ -48,24 +48,31 @@ RANK_CLASSIFICATION = {
 
 
 # --- Helper Functions ---
-def get_next_week_range_str():
+def get_current_week_range_str(cursor):
     """
-    Calculates the full 7-day date range (Monday to Sunday) for the upcoming week.
-    ปรับปรุง: คำนวณห้วงเวลาของสัปดาห์หน้าแบบเต็ม 7 วัน (จันทร์-อาทิตย์)
+    ดึงวันที่เริ่มต้นของสัปดาห์ปัจจุบันจากฐานข้อมูล และคำนวณช่วงวันที่
     """
-    today = date.today()
-    start_of_next_week = today + timedelta(days=-today.weekday(), weeks=1)
-    end_of_next_week = start_of_next_week + timedelta(days=6)
+    cursor.execute("SELECT value FROM system_settings WHERE key = 'current_week_start_date'")
+    start_date_row = cursor.fetchone()
+    
+    if not start_date_row:
+        # กรณีฉุกเฉิน หากไม่มีข้อมูลใน settings ให้ใช้วันปัจจุบันไปก่อน
+        today = date.today()
+        start_of_week = today - timedelta(days=today.weekday())
+    else:
+        start_of_week = date.fromisoformat(start_date_row['value'])
+
+    end_of_week = start_of_week + timedelta(days=6)
     
     thai_months_abbr = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."]
 
-    start_day = start_of_next_week.day
-    start_month = thai_months_abbr[start_of_next_week.month - 1]
-    start_year_be = str(start_of_next_week.year + 543)
+    start_day = start_of_week.day
+    start_month = thai_months_abbr[start_of_week.month - 1]
+    start_year_be = str(start_of_week.year + 543)
     
-    end_day = end_of_next_week.day
-    end_month = thai_months_abbr[end_of_next_week.month - 1]
-    end_year_be = str(end_of_next_week.year + 543)
+    end_day = end_of_week.day
+    end_month = thai_months_abbr[end_of_week.month - 1]
+    end_year_be = str(end_of_week.year + 543)
 
     if start_year_be != end_year_be:
         return f"{start_day} {start_month} {start_year_be} - {end_day} {end_month} {end_year_be}"
@@ -74,7 +81,6 @@ def get_next_week_range_str():
         return f"{start_day} {start_month} - {end_day} {end_month} {end_year_be}"
         
     return f"{start_day} - {end_day} {end_month} {end_year_be}"
-
 # --- START: NEW HELPER FOR DAILY SYSTEM LOGIC ---
 def get_daily_target_date(cursor):
     """
@@ -115,10 +121,29 @@ def get_db_connection():
 def init_db():
     conn = get_db_connection()
     cursor = conn.cursor()
+    cursor.execute('CREATE TABLE IF NOT EXISTS system_settings (key TEXT PRIMARY KEY, value TEXT)')
     cursor.execute('CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, salt BLOB NOT NULL, key BLOB NOT NULL, rank TEXT, first_name TEXT, last_name TEXT, position TEXT, department TEXT, role TEXT NOT NULL)')
     cursor.execute('CREATE TABLE IF NOT EXISTS personnel (id TEXT PRIMARY KEY, rank TEXT, first_name TEXT, last_name TEXT, position TEXT, specialty TEXT, department TEXT)')
     cursor.execute('CREATE TABLE IF NOT EXISTS status_reports (id TEXT PRIMARY KEY, date TEXT NOT NULL, submitted_by TEXT, department TEXT, timestamp DATETIME, report_data TEXT)')
-    cursor.execute('CREATE TABLE IF NOT EXISTS archived_reports (id TEXT PRIMARY KEY, year INTEGER NOT NULL, month INTEGER NOT NULL, date TEXT NOT NULL, department TEXT, submitted_by TEXT, report_data TEXT, timestamp DATETIME)')
+    cursor.execute('CREATE TABLE IF NOT EXISTS system_settings (key TEXT PRIMARY KEY, value TEXT)')
+    
+    # ตรวจสอบและตั้งค่าสัปดาห์ปัจจุบันเริ่มต้น
+    cursor.execute("SELECT value FROM system_settings WHERE key = 'current_week_start_date'")
+    if not cursor.fetchone():
+        today = date.today()
+        # คำนวณหาวันจันทร์ของสัปดาห์ปัจจุบัน
+        start_of_current_week = today - timedelta(days=today.weekday())
+        cursor.execute("INSERT INTO system_settings (key, value) VALUES (?, ?)", 
+                       ('current_week_start_date', start_of_current_week.isoformat()))
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS archived_reports (
+            id TEXT PRIMARY KEY,
+            week_range TEXT,
+            report_data TEXT,
+            archived_by TEXT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
     cursor.execute('CREATE TABLE IF NOT EXISTS sessions (token TEXT PRIMARY KEY, username TEXT NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (username) REFERENCES users (username) ON DELETE CASCADE)')
     
     cursor.execute('''
@@ -270,7 +295,8 @@ def handle_get_dashboard_summary(payload, conn, cursor):
     cursor.execute("SELECT COUNT(id) as total FROM personnel")
     total_personnel = cursor.fetchone()['total']
     total_on_duty = total_personnel - sum(status_summary.values())
-    summary = {"all_departments": all_departments, "submitted_info": submitted_info, "status_summary": dict(status_summary), "total_personnel": total_personnel, "total_on_duty": total_on_duty, "weekly_date_range": get_next_week_range_str()}
+    summary = {"weekly_date_range": get_current_week_range_str(cursor) # <--- แก้ไขตรงนี้
+    }
     return {"status": "success", "summary": summary}
 
 def handle_list_users(payload, conn, cursor):
@@ -391,15 +417,9 @@ def handle_list_personnel(payload, conn, cursor, session):
         cursor.execute(query, params_status)
         persistent_statuses = [dict(row) for row in cursor.fetchall()]
 
-    response_data = {
-        "status": "success",
-        "personnel": personnel,
-        "total": total_items,
-        "page": page,
-        "submission_status": submission_status,
-        "weekly_date_range": get_next_week_range_str(),
+    response_data = "weekly_date_range": get_current_week_range_str(cursor), # <--- แก้ไขตรงนี้
         "persistent_statuses": persistent_statuses
-    }
+    
     if is_admin and fetch_all:
         response_data["all_departments"] = all_departments
         
@@ -503,38 +523,75 @@ def handle_get_status_reports(payload, conn, cursor):
         "submitted_departments": list(submitted_departments)
     }
 
-def handle_archive_reports(payload, conn, cursor):
-    for report in payload.get("reports", []):
-        report_date = report["date"]
-        department = report["department"]
-        cursor.execute("DELETE FROM archived_reports WHERE date = ? AND department = ?", (report_date, department))
-        year, month = map(int, report_date.split('-')[:2])
-        submitted_by = f"{report['rank']} {report['first_name']} {report['last_name']}"
-        cursor.execute("INSERT INTO archived_reports (id, year, month, date, department, submitted_by, report_data, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                       (str(uuid.uuid4()), year, month, report_date, department, submitted_by, json.dumps(report["items"]), report["timestamp"]))
+def handle_archive_reports(payload, conn, cursor, session):
+    reports_to_archive = payload.get("reports", [])
+    week_range = payload.get("week_range", "")
+    archived_by_user = session.get("username")
+
+    if not reports_to_archive:
+        return {"status": "error", "message": "ไม่พบข้อมูลรายงานที่จะเก็บ"}
+
+    full_report_data = json.dumps(reports_to_archive)
+
+    cursor.execute(
+        "INSERT INTO archived_reports (id, week_range, report_data, archived_by, timestamp) VALUES (?, ?, ?, ?, ?)",
+        (str(uuid.uuid4()), week_range, full_report_data, archived_by_user, datetime.utcnow() + timedelta(hours=7))
+    )
+
+    # ล้างข้อมูลใน status_reports หลังจากเก็บเรียบร้อยแล้ว
     cursor.execute("DELETE FROM status_reports")
     conn.commit()
+
+    # --- โค้ดส่วนที่เพิ่มเข้ามาใหม่ทั้งหมด ---
+    print("กำลังอัปเดตรอบสัปดาห์ถัดไป...")
+    cursor.execute("SELECT value FROM system_settings WHERE key = 'current_week_start_date'")
+    current_start_date_str = cursor.fetchone()['value']
+    current_start_date = date.fromisoformat(current_start_date_str)
+    
+    # บวก 7 วันเพื่อเลื่อนไปสัปดาห์หน้า
+    next_week_start_date = current_start_date + timedelta(days=7)
+    
+    # บันทึกวันที่เริ่มต้นของสัปดาห์ใหม่ลงฐานข้อมูล
+    cursor.execute("UPDATE system_settings SET value = ? WHERE key = ?", 
+                   (next_week_start_date.isoformat(), 'current_week_start_date'))
+    conn.commit()
+    print(f" -> อัปเดตรอบสัปดาห์ใหม่เป็น: {next_week_start_date.isoformat()}")
+    # --- สิ้นสุดส่วนที่เพิ่ม ---
+
     return {"status": "success", "message": "เก็บรายงานและรีเซ็ตแดชบอร์ดสำเร็จ"}
 
 def handle_get_archived_reports(payload, conn, cursor):
-    cursor.execute("SELECT * FROM archived_reports ORDER BY year DESC, month DESC, date DESC")
-    archives = defaultdict(lambda: defaultdict(list))
+    cursor.execute("SELECT id, week_range, report_data, archived_by, timestamp FROM archived_reports ORDER BY timestamp DESC")
+    
+    archives_by_month = defaultdict(lambda: defaultdict(list))
+    
     for row in cursor.fetchall():
-        report = dict(row)
-        report["items"] = json.loads(report["report_data"])
-        del report["report_data"]
-        archives[str(report["year"])][str(report["month"])].append(report)
-    return {"status": "success", "archives": dict(archives)}
+        archive_batch = dict(row)
+        # แปลง JSON string กลับเป็น Python list
+        archive_batch["reports"] = json.loads(archive_batch["report_data"])
+        del archive_batch["report_data"]
+        
+        # จัดกลุ่มตาม ปี และ เดือน จาก timestamp
+        timestamp_dt = datetime.strptime(archive_batch["timestamp"].split('.')[0], '%Y-%m-%d %H:%M:%S')
+        year_be = str(timestamp_dt.year + 543)
+        month = str(timestamp_dt.month)
+        
+        archives_by_month[year_be][month].append(archive_batch)
+        
+    return {"status": "success", "archives": dict(archives_by_month)}
 
 def handle_get_submission_history(payload, conn, cursor, session):
     user_dept = session.get("department")
     if not user_dept: return {"status": "error", "message": "ไม่พบข้อมูลแผนกของผู้ใช้"}
+    
+    # --- จุดที่แก้ไข: เปลี่ยนจาก archived_reports เป็น archived_reports_old ---
+    # เพื่อให้ดึงข้อมูลประวัติการส่งย้อนหลังจากตารางที่สำรองไว้
     query = """
     SELECT id, date, submitted_by, department, timestamp, report_data, 'active' as source
     FROM status_reports WHERE department = :dept
     UNION ALL
     SELECT id, date, submitted_by, department, timestamp, report_data, 'archived' as source
-    FROM archived_reports WHERE department = :dept
+    FROM archived_reports_old WHERE department = :dept
     ORDER BY timestamp DESC
     """
     cursor.execute(query, {"dept": user_dept})
