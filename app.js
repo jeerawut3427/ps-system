@@ -313,7 +313,7 @@ function initializePage() {
     if (statusSubmissionListArea) {
         statusSubmissionListArea.addEventListener('click', function(e) {
             if (e.target && e.target.classList.contains('add-status-btn')) {
-                addStatusRow(e.target);
+                ui.addStatusRow(e.target);
             }
             if (e.target && e.target.classList.contains('remove-status-btn')) {
                 const subRow = e.target.closest('tr');
@@ -356,7 +356,7 @@ window.loadDataForPane = async function(paneId) {
             ui.populateArchiveSelectors(window.allArchivedReports);
             if(window.archiveContainer) window.archiveContainer.innerHTML = '';
         }},
-        'pane-holidays': { action: 'list_holidays', renderer: handlers.renderHolidays },
+        'pane-holidays': { action: 'list_holidays', renderer: handlers.renderHolidays }
     };
 
     const paneConfig = actions[paneId];
@@ -413,3 +413,4 @@ window.switchTab = function(tabId) {
         }
     });
 }
+

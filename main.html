@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;700&display=swap" rel="stylesheet">
     
+    <!-- Flatpickr CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
     <link rel="stylesheet" href="style.css">
@@ -44,6 +45,7 @@
             </nav>
             
             <main>
+                <!-- Dashboard Pane -->
                 <section id="pane-dashboard" class="tab-pane hidden">
                     <div class="flex items-baseline gap-x-3 mb-4">
                         <h2 class="text-xl font-semibold">สรุปภาพรวมประจำสัปดาห์</h2>
@@ -69,23 +71,28 @@
                     </div>
                 </section>
 
+                <!-- Active Statuses Pane -->
                 <section id="pane-active-statuses" class="tab-pane hidden">
                     <div class="flex justify-between items-center mb-4">
                         <h2 id="active-statuses-title" class="text-xl font-semibold">สถานะกำลังพล (ปัจจุบัน)</h2>
                     </div>
                     <div id="status-filter-container" class="flex flex-wrap gap-2 mb-6 border-b pb-4">
-                        </div>
+                        <!-- Filter buttons will be dynamically inserted here -->
+                    </div>
                     <div id="status-chart-container" class="mb-8 p-4 bg-gray-50 rounded-lg flex justify-center items-center h-64 md:h-80">
                         <canvas id="status-chart-canvas"></canvas>
                     </div>
                     
+                    <!-- Unavailable Personnel Section -->
                     <h3 id="unavailable-title" class="text-lg font-semibold text-red-600 mb-3">กำลังพลติดภารกิจ</h3>
                     <div id="active-statuses-container" class="overflow-x-auto mb-8"></div>
 
+                    <!-- Available Personnel Section -->
                     <h3 id="available-title" class="text-lg font-semibold text-green-600 mb-3">กำลังพลว่าง</h3>
                     <div id="available-personnel-container" class="overflow-x-auto"></div>
                 </section>
 
+                <!-- Submit Status Pane -->
                 <section id="pane-submit-status" class="tab-pane hidden">
                      <div id="admin-dept-selector-container" class="mb-4"></div>
                      <div id="submission-info-area" class="hidden text-center p-4 mb-4 bg-green-100 text-green-800 rounded-lg"></div>
@@ -134,6 +141,7 @@
                     </div>
                 </section>
 
+                <!-- History Pane -->
                 <section id="pane-history" class="tab-pane hidden">
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-xl font-semibold">ประวัติการส่งรายงานย้อนหลัง</h2>
@@ -152,6 +160,7 @@
                     <div id="history-container" class="space-y-6"></div>
                 </section>
 
+                <!-- Weekly Report Pane -->
                 <section id="pane-report" class="tab-pane hidden space-y-8">
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-xl font-semibold">ส่งรายงานประจำสัปดาห์ <span id="report-week-range" class="text-lg text-gray-500 font-normal"></span></h2>
@@ -160,8 +169,11 @@
                     <div id="report-container"></div>
                 </section>
 
+                <!-- Archive Pane -->
                 <section id="pane-archive" class="tab-pane hidden space-y-8">
-                    <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-semibold">ประวัติการเก็บรายงานทั้งหมด</h2></div>
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 id="archive-pane-title" class="text-xl font-semibold">ประวัติการเก็บรายงานทั้งหมด</h2>
+                    </div>
                     <div class="flex items-center space-x-4 mb-6 p-4 bg-gray-50 rounded-lg">
                         <div>
                             <label for="archive-year-select" class="block text-sm font-medium text-gray-700">เลือกปี (พ.ศ.)</label>
@@ -176,6 +188,7 @@
                     <div id="archive-container"></div>
                 </section>
 
+                <!-- Personnel Management Pane (Stays in HTML but is hidden) -->
                 <section id="pane-personnel" class="tab-pane hidden">
                     <div class="flex flex-wrap justify-between items-center mb-6 gap-4">
                         <h2 class="text-xl font-semibold">รายชื่อกำลังพล</h2>
@@ -193,6 +206,7 @@
                     <div id="personnel-pagination" class="mt-4 flex justify-between items-center"></div>
                 </section>
 
+                <!-- User Management Pane (Stays in HTML but is hidden) -->
                 <section id="pane-admin" class="tab-pane hidden">
                      <div class="flex flex-wrap justify-between items-center mb-6 gap-4">
                         <h2 class="text-xl font-semibold">รายชื่อผู้ใช้งานระบบ</h2>
@@ -236,8 +250,9 @@
             
         </article>
     </div>
+    <!-- Modals -->
     <div id="personnel-modal" class="modal fixed inset-0 bg-gray-600 bg-opacity-50 z-20"><div class="relative mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white"><form id="personnel-form"><h3 id="personnel-modal-title" class="text-lg font-medium text-gray-900 mb-4">ข้อมูลกำลังพล</h3><input type="hidden" id="person-id"><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label class="block text-sm">ยศ - คำนำหน้า</label><select id="person-rank" class="w-full border rounded px-2 py-1 bg-white" required></select></div><div><label class="block text-sm">ชื่อ</label><input type="text" id="person-first-name" class="w-full border rounded px-2 py-1" required></div><div><label class="block text-sm">นามสกุล</label><input type="text" id="person-last-name" class="w-full border rounded px-2 py-1" required></div><div><label class="block text-sm">เหล่า</label><select id="person-specialty" class="w-full border rounded px-2 py-1 bg-white" required><option value="ชย.">ชย.</option><option value="สบ.">สบ.</option></select></div><div class="md:col-span-2"><label class="block text-sm">ตำแหน่ง</label><input type="text" id="person-position" class="w-full border rounded px-2 py-1" required></div><div class="md:col-span-2"><label class="block text-sm">แผนก</label><select id="person-department" class="w-full border rounded px-2 py-1 bg-white" required><option value="ฝธก.กวก.ชย.ทอ.">ฝธก.กวก.ชย.ทอ.</option><option value="ฝธก.กอบ.กวก.ชย.ทอ.">ฝธก.กอบ.กวก.ชย.ทอ.</option><option value="ผวก.กวก.ชย.ทอ.">ผวก.กวก.ชย.ทอ.</option><option value="ผจง.กวก.ชย.ทอ.">ผจง.กวก.ชย.ทอ.</option><option value="ผตค.กวก.ชย.ทอ.">ผตค.กวก.ชย.ทอ.</option><option value="ผบผ.กอบ.กวก.ชย.ทอ.">ผบผ.กอบ.กวก.ชย.ทอ.</option><option value="ผวคส.กอบ.กวก.ชย.ทอ.">ผวคส.กอบ.กวก.ชย.ทอ.</option><option value="ผวร.กอบ.กวก.ชย.ทอ.">ผวร.กอบ.กวก.ชย.ทอ.</option><option value="ผวยธ.กอบ.กวก.ชย.ทอ.">ผวยธ.กอบ.กวก.ชย.ทอ.</option></select></div></div><div class="items-center px-4 py-3 mt-4 text-right"><button id="cancel-personnel-btn" type="button" class="px-4 py-2 bg-gray-200 rounded-md mr-2">ยกเลิก</button><button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-md">บันทึก</button></div></form></div></div>
-    <div id="user-modal" class="modal fixed inset-0 bg-gray-600 bg-opacity-50 z-20"><div class="relative mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white"><form id="user-form"><h3 id="user-modal-title" class="text-lg font-medium text-gray-900 mb-4">ข้อมูลผู้ใช้งาน</h3><div class="space-y-4"><div><label class="block text-sm">Username</label><input type="text" id="user-username" class="w-full border rounded px-2 py-1" required></div><div><label class="block text-sm">Password <span class="text-xs text-gray-500">(กรอกเพื่อตั้งใหม่)</span></label><input type="password" id="user-password" class="w-full border rounded px-2 py-1"></div><hr><div><label class="block text-sm">ยศ-คำนำหน้า</label><select id="user-rank" class="w-full border rounded px-2 py-1 bg-white" required></select></div><div><label class="block text-sm">ชื่อ</label><input type="text" id="user-first-name" class="w-full border rounded px-2 py-1" required></div><div><label class="block text-sm">นามสกุล</label><input type="text" id="user-last-name" class="w-full border rounded px-2 py-1" required></div><div><label class="block text-sm">ตำแหน่ง</label><input type="text" id="user-position" class="w-full border rounded px-2 py-1" required></div><div><label class="block text-sm">แผนก</label><select id="user-department" class="w-full border rounded px-2 py-1 bg-white" required><option value="ฝธก.กวก.ชย.ทอ.">ฝธก.กวก.ชย.ทอ.</option><option value="ฝธก.กอบ.กวก.ชย.ทอ.">ฝธก.กอบ.กวก.ชย.ทอ.</option><option value="ผวก.กวก.ชย.ทอ.">ผวก.กวก.ชย.ทอ.</option><option value="ผจง.กวก.ชย.ทอ.">ผจง.กวก.ชย.ทอ.</option><option value="ผตค.กวก.ชย.ทอ.">ผตค.กวก.ชย.ทอ.</option><option value="ผบผ.กอบ.กวก.ชย.ทอ.">ผบผ.กอบ.กวก.ชย.ทอ.</option><option value="ผวคส.กอบ.กวก.ชย.ทอ.">ผวคส.กอบ.กวก.ชย.ทอ.</option><option value="ผวร.กอบ.กวก.ชย.ทอ.">ผวร.กอบ.กวก.ชย.ทอ.</option><option value="ผวยธ.กอบ.กวก.ชय.ทอ.">ผวยธ.กอบ.กวก.ชย.ทอ.</option></select></div><div><label class="block text-sm">สิทธิ์การเข้าถึง (Role)</label><select id="user-role" class="w-full border rounded px-2 py-1 bg-white" required><option value="user">User (ดูข้อมูลได้อย่างเดียว)</option><option value="admin">Admin (จัดการได้ทุกอย่าง)</option></select></div></div><div class="items-center px-4 py-3 mt-4 text-right"><button id="cancel-user-btn" type="button" class="px-4 py-2 bg-gray-200 rounded-md mr-2">ยกเลิก</button><button type="submit" class="px-4 py-2 bg-purple-500 text-white rounded-md">บันทึก</button></div></form></div></div>
+    <div id="user-modal" class="modal fixed inset-0 bg-gray-600 bg-opacity-50 z-20"><div class="relative mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white"><form id="user-form"><h3 id="user-modal-title" class="text-lg font-medium text-gray-900 mb-4">ข้อมูลผู้ใช้งาน</h3><div class="space-y-4"><div><label class="block text-sm">Username</label><input type="text" id="user-username" class="w-full border rounded px-2 py-1" required></div><div><label class="block text-sm">Password <span class="text-xs text-gray-500">(กรอกเพื่อตั้งใหม่)</span></label><input type="password" id="user-password" class="w-full border rounded px-2 py-1"></div><hr><div><label class="block text-sm">ยศ-คำนำหน้า</label><select id="user-rank" class="w-full border rounded px-2 py-1 bg-white" required></select></div><div><label class="block text-sm">ชื่อ</label><input type="text" id="user-first-name" class="w-full border rounded px-2 py-1" required></div><div><label class="block text-sm">นามสกุล</label><input type="text" id="user-last-name" class="w-full border rounded px-2 py-1" required></div><div><label class="block text-sm">ตำแหน่ง</label><input type="text" id="user-position" class="w-full border rounded px-2 py-1" required></div><div><label class="block text-sm">แผนก</label><select id="user-department" class="w-full border rounded px-2 py-1 bg-white" required><option value="ฝธก.กวก.ชย.ทอ.">ฝธก.กวก.ชย.ทอ.</option><option value="ฝธก.กอบ.กวก.ชย.ทอ.">ฝธก.กอบ.กวก.ชย.ทอ.</option><option value="ผวก.กวก.ชย.ทอ.">ผวก.กวก.ชย.ทอ.</option><option value="ผจง.กวก.ชย.ทอ.">ผจง.กวก.ชย.ทอ.</option><option value="ผตค.กวก.ชย.ทอ.">ผตค.กวก.ชย.ทอ.</option><option value="ผบผ.กอบ.กวก.ชย.ทอ.">ผบผ.กอบ.กวก.ชย.ทอ.</option><option value="ผวคส.กอบ.กวก.ชย.ทอ.">ผวคส.กอบ.กวก.ชย.ทอ.</option><option value="ผวร.กอบ.กวก.ชย.ทอ.">ผวร.กอบ.กวก.ชย.ทอ.</option><option value="ผวยธ.กอบ.กวก.ชย.ทอ.">ผวยธ.กอบ.กวก.ชย.ทอ.</option></select></div><div><label class="block text-sm">สิทธิ์การเข้าถึง (Role)</label><select id="user-role" class="w-full border rounded px-2 py-1 bg-white" required><option value="user">User (ดูข้อมูลได้อย่างเดียว)</option><option value="admin">Admin (จัดการได้ทุกอย่าง)</option></select></div></div><div class="items-center px-4 py-3 mt-4 text-right"><button id="cancel-user-btn" type="button" class="px-4 py-2 bg-gray-200 rounded-md mr-2">ยกเลิก</button><button type="submit" class="px-4 py-2 bg-purple-500 text-white rounded-md">บันทึก</button></div></form></div></div>
     
     <div id="archive-confirm-modal" class="modal fixed inset-0 bg-gray-600 bg-opacity-50 z-20 items-center justify-center">
         <div class="relative bg-white rounded-lg shadow-xl max-w-sm w-full p-6">
@@ -261,17 +276,11 @@
         </div>
     </div>
     
-    <script>
-        document.addEventListener('input', function(e) {
-            if (e.target && e.target.classList.contains('details-input')) {
-                // This regex removes Thai numerals (๐ through ๙)
-                e.target.value = e.target.value.replace(/[๐-๙]/g, '');
-            }
-        });
-    </script>
+    <!-- Scripts loaded at the end for better performance and correct order -->
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <script src="app.js" type="module" defer></script>
 </body>
 </html>
+

@@ -2,6 +2,7 @@
 // Contains all functions related to updating and rendering the user interface.
 
 import { escapeHTML, formatThaiDateArabic, formatThaiDateRangeArabic } from './utils.js';
+import { exportSingleReportToExcel } from './utils.js'; // Import the export function
 
 const ITEMS_PER_PAGE = 15;
 
@@ -684,7 +685,7 @@ export function populateArchiveSelectors(archives) {
         sortedYears.forEach(year => {
             const option = document.createElement('option');
             option.value = year;
-            option.textContent = parseInt(year) + 543;
+            option.textContent = year;
             window.archiveYearSelect.appendChild(option);
         });
     }
@@ -694,7 +695,6 @@ export function renderArchivedReports(reports) {
     if(!window.archiveContainer) return;
     window.archiveContainer.innerHTML = '';
 
-    // reports ตอนนี้คือ list ของ "รอบการเก็บ" (archive batches)
     if (!reports || reports.length === 0) {
         window.archiveContainer.innerHTML = createEmptyState('ไม่พบรายงานที่เก็บถาวรสำหรับเดือนที่เลือก');
         return;
@@ -707,7 +707,6 @@ export function renderArchivedReports(reports) {
         const submittedTime = new Date(batch.timestamp).toLocaleString('th-TH', { dateStyle: 'full', timeStyle: 'short' });
         const archivedBy = batch.archived_by || 'ไม่ระบุ';
 
-        // สร้าง HTML สำหรับรายงานของแต่ละแผนกที่อยู่ในรอบนั้นๆ
         let reportsHtml = batch.reports.map(report => {
             const itemsHtml = report.items.map((item, index) => 
                 `<tr class="border-t">
@@ -734,7 +733,8 @@ export function renderArchivedReports(reports) {
                 </table>
             </div>`;
         }).join('');
-
+        
+        // --- ↓ จุดที่แก้ไขทั้งหมดอยู่ตรงนี้ ---
         archiveWrapper.innerHTML = `
             <div class="flex flex-wrap justify-between items-center gap-2">
                 <div>
@@ -746,10 +746,10 @@ export function renderArchivedReports(reports) {
             <div class="mt-4 space-y-4">${reportsHtml}</div>
         `;
 
-        // เพิ่ม Event Listener ให้กับปุ่มดาวน์โหลดของรอบนี้โดยเฉพาะ
         archiveWrapper.querySelector('.download-archive-batch-btn').addEventListener('click', () => {
             exportSingleReportToExcel(batch.reports, `รายงานย้อนหลัง-${batch.week_range}.xlsx`, batch.week_range);
         });
+        // --- สิ้นสุดจุดที่แก้ไข ---
 
         window.archiveContainer.appendChild(archiveWrapper);
     });

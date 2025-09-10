@@ -81,6 +81,7 @@ def get_current_week_range_str(cursor):
         return f"{start_day} {start_month} - {end_day} {end_month} {end_year_be}"
         
     return f"{start_day} - {end_day} {end_month} {end_year_be}"
+
 # --- START: NEW HELPER FOR DAILY SYSTEM LOGIC ---
 def get_daily_target_date(cursor):
     """
@@ -121,29 +122,21 @@ def get_db_connection():
 def init_db():
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('CREATE TABLE IF NOT EXISTS system_settings (key TEXT PRIMARY KEY, value TEXT)')
     cursor.execute('CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, salt BLOB NOT NULL, key BLOB NOT NULL, rank TEXT, first_name TEXT, last_name TEXT, position TEXT, department TEXT, role TEXT NOT NULL)')
     cursor.execute('CREATE TABLE IF NOT EXISTS personnel (id TEXT PRIMARY KEY, rank TEXT, first_name TEXT, last_name TEXT, position TEXT, specialty TEXT, department TEXT)')
     cursor.execute('CREATE TABLE IF NOT EXISTS status_reports (id TEXT PRIMARY KEY, date TEXT NOT NULL, submitted_by TEXT, department TEXT, timestamp DATETIME, report_data TEXT)')
-    cursor.execute('CREATE TABLE IF NOT EXISTS system_settings (key TEXT PRIMARY KEY, value TEXT)')
     
-    # ตรวจสอบและตั้งค่าสัปดาห์ปัจจุบันเริ่มต้น
-    cursor.execute("SELECT value FROM system_settings WHERE key = 'current_week_start_date'")
-    if not cursor.fetchone():
-        today = date.today()
-        # คำนวณหาวันจันทร์ของสัปดาห์ปัจจุบัน
-        start_of_current_week = today - timedelta(days=today.weekday())
-        cursor.execute("INSERT INTO system_settings (key, value) VALUES (?, ?)", 
-                       ('current_week_start_date', start_of_current_week.isoformat()))
+    # Updated archived_reports table structure
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS archived_reports (
             id TEXT PRIMARY KEY,
             week_range TEXT,
             report_data TEXT,
             archived_by TEXT,
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+            timestamp DATETIME
         )
     ''')
+
     cursor.execute('CREATE TABLE IF NOT EXISTS sessions (token TEXT PRIMARY KEY, username TEXT NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (username) REFERENCES users (username) ON DELETE CASCADE)')
     
     cursor.execute('''
@@ -191,6 +184,18 @@ def init_db():
             description TEXT NOT NULL
         )
     ''')
+    
+    # New table for system settings
+    cursor.execute('CREATE TABLE IF NOT EXISTS system_settings (key TEXT PRIMARY KEY, value TEXT)')
+    
+    # Check and set the initial current week start date
+    cursor.execute("SELECT value FROM system_settings WHERE key = 'current_week_start_date'")
+    if not cursor.fetchone():
+        today = date.today()
+        start_of_current_week = today - timedelta(days=today.weekday())
+        cursor.execute("INSERT INTO system_settings (key, value) VALUES (?, ?)", 
+                       ('current_week_start_date', start_of_current_week.isoformat()))
+
 
     cursor.execute("SELECT * FROM users WHERE username = ?", ('jeerawut',))
     if not cursor.fetchone():
@@ -295,7 +300,13 @@ def handle_get_dashboard_summary(payload, conn, cursor):
     cursor.execute("SELECT COUNT(id) as total FROM personnel")
     total_personnel = cursor.fetchone()['total']
     total_on_duty = total_personnel - sum(status_summary.values())
-    summary = {"weekly_date_range": get_current_week_range_str(cursor) # <--- แก้ไขตรงนี้
+    summary = {
+        "all_departments": all_departments, 
+        "submitted_info": submitted_info, 
+        "status_summary": dict(status_summary), 
+        "total_personnel": total_personnel, 
+        "total_on_duty": total_on_duty, 
+        "weekly_date_range": get_current_week_range_str(cursor)
     }
     return {"status": "success", "summary": summary}
 
@@ -367,7 +378,6 @@ def handle_list_personnel(payload, conn, cursor, session):
         where_clauses.append("(first_name LIKE ? OR last_name LIKE ? OR position LIKE ?)")
         params.extend([f"%{search_term}%"] * 3)
         
-    # แก้ไข: กรองให้แสดงเฉพาะนายทหารสัญญาบัตรในหน้าส่งยอดประจำสัปดาห์
     if fetch_all:
         officer_ranks = RANK_CLASSIFICATION['officer']
         placeholders = ', '.join('?' for _ in officer_ranks)
@@ -396,13 +406,11 @@ def handle_list_personnel(payload, conn, cursor, session):
         if last_submission: submission_status = {"timestamp": last_submission['timestamp']}
 
     persistent_statuses = []
-    all_departments = [] # เพิ่ม: สำหรับส่งให้ Admin dropdown
+    all_departments = []
     if fetch_all:
         today = date.today()
         end_of_current_week = today + timedelta(days=6 - today.weekday())
         end_of_current_week_str = end_of_current_week.isoformat()
-
-        dept_to_query = department
         
         if is_admin:
             cursor.execute("SELECT DISTINCT department FROM personnel WHERE department IS NOT NULL AND department != '' ORDER BY department")
@@ -417,14 +425,19 @@ def handle_list_personnel(payload, conn, cursor, session):
         cursor.execute(query, params_status)
         persistent_statuses = [dict(row) for row in cursor.fetchall()]
 
-    response_data = "weekly_date_range": get_current_week_range_str(cursor), # <--- แก้ไขตรงนี้
+    response_data = {
+        "status": "success",
+        "personnel": personnel,
+        "total": total_items,
+        "page": page,
+        "submission_status": submission_status,
+        "weekly_date_range": get_current_week_range_str(cursor),
         "persistent_statuses": persistent_statuses
-    
+    }
     if is_admin and fetch_all:
         response_data["all_departments"] = all_departments
         
     return response_data
-
 
 def handle_get_personnel_details(payload, conn, cursor):
     person_id = payload.get("id")
@@ -518,7 +531,7 @@ def handle_get_status_reports(payload, conn, cursor):
     return {
         "status": "success",
         "reports": reports,
-        "weekly_date_range": get_next_week_range_str(),
+        "weekly_date_range": get_current_week_range_str(cursor),
         "all_departments": all_departments,
         "submitted_departments": list(submitted_departments)
     }
@@ -538,25 +551,26 @@ def handle_archive_reports(payload, conn, cursor, session):
         (str(uuid.uuid4()), week_range, full_report_data, archived_by_user, datetime.utcnow() + timedelta(hours=7))
     )
 
-    # ล้างข้อมูลใน status_reports หลังจากเก็บเรียบร้อยแล้ว
     cursor.execute("DELETE FROM status_reports")
     conn.commit()
 
-    # --- โค้ดส่วนที่เพิ่มเข้ามาใหม่ทั้งหมด ---
     print("กำลังอัปเดตรอบสัปดาห์ถัดไป...")
     cursor.execute("SELECT value FROM system_settings WHERE key = 'current_week_start_date'")
-    current_start_date_str = cursor.fetchone()['value']
-    current_start_date = date.fromisoformat(current_start_date_str)
+    start_date_row = cursor.fetchone()
     
-    # บวก 7 วันเพื่อเลื่อนไปสัปดาห์หน้า
-    next_week_start_date = current_start_date + timedelta(days=7)
-    
-    # บันทึกวันที่เริ่มต้นของสัปดาห์ใหม่ลงฐานข้อมูล
-    cursor.execute("UPDATE system_settings SET value = ? WHERE key = ?", 
-                   (next_week_start_date.isoformat(), 'current_week_start_date'))
-    conn.commit()
-    print(f" -> อัปเดตรอบสัปดาห์ใหม่เป็น: {next_week_start_date.isoformat()}")
-    # --- สิ้นสุดส่วนที่เพิ่ม ---
+    if start_date_row:
+        current_start_date_str = start_date_row['value']
+        current_start_date = date.fromisoformat(current_start_date_str)
+        
+        next_week_start_date = current_start_date + timedelta(days=7)
+        
+        cursor.execute("UPDATE system_settings SET value = ? WHERE key = ?", 
+                       (next_week_start_date.isoformat(), 'current_week_start_date'))
+        conn.commit()
+        print(f" -> อัปเดตรอบสัปดาห์ใหม่เป็น: {next_week_start_date.isoformat()}")
+    else:
+        print(" -> ไม่พบ 'current_week_start_date' ใน system_settings ไม่สามารถเลื่อนสัปดาห์ได้")
+
 
     return {"status": "success", "message": "เก็บรายงานและรีเซ็ตแดชบอร์ดสำเร็จ"}
 
@@ -567,11 +581,9 @@ def handle_get_archived_reports(payload, conn, cursor):
     
     for row in cursor.fetchall():
         archive_batch = dict(row)
-        # แปลง JSON string กลับเป็น Python list
         archive_batch["reports"] = json.loads(archive_batch["report_data"])
         del archive_batch["report_data"]
         
-        # จัดกลุ่มตาม ปี และ เดือน จาก timestamp
         timestamp_dt = datetime.strptime(archive_batch["timestamp"].split('.')[0], '%Y-%m-%d %H:%M:%S')
         year_be = str(timestamp_dt.year + 543)
         month = str(timestamp_dt.month)
@@ -584,16 +596,22 @@ def handle_get_submission_history(payload, conn, cursor, session):
     user_dept = session.get("department")
     if not user_dept: return {"status": "error", "message": "ไม่พบข้อมูลแผนกของผู้ใช้"}
     
-    # --- จุดที่แก้ไข: เปลี่ยนจาก archived_reports เป็น archived_reports_old ---
-    # เพื่อให้ดึงข้อมูลประวัติการส่งย้อนหลังจากตารางที่สำรองไว้
     query = """
     SELECT id, date, submitted_by, department, timestamp, report_data, 'active' as source
     FROM status_reports WHERE department = :dept
-    UNION ALL
-    SELECT id, date, submitted_by, department, timestamp, report_data, 'archived' as source
-    FROM archived_reports_old WHERE department = :dept
-    ORDER BY timestamp DESC
     """
+    
+    # Check if the old archive table exists before adding it to the query
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='archived_reports_old';")
+    if cursor.fetchone():
+        query += """
+        UNION ALL
+        SELECT id, date, submitted_by, department, timestamp, report_data, 'archived' as source
+        FROM archived_reports_old WHERE department = :dept
+        """
+
+    query += " ORDER BY timestamp DESC"
+    
     cursor.execute(query, {"dept": user_dept})
     
     history_by_month = defaultdict(lambda: defaultdict(list))
@@ -611,17 +629,26 @@ def handle_get_submission_history(payload, conn, cursor, session):
         
     return {"status": "success", "history": dict(history_by_month)}
 
+
 def handle_get_report_for_editing(payload, conn, cursor):
     report_id = payload.get("id")
     if not report_id: return {"status": "error", "message": "ไม่พบ ID ของรายงาน"}
+    
+    # 1. Check active reports
     cursor.execute("SELECT report_data, department FROM status_reports WHERE id = ?", (report_id,))
     report = cursor.fetchone()
+    
+    # 2. If not found, check the old archive table (if it exists)
     if not report:
-        cursor.execute("SELECT report_data, department FROM archived_reports WHERE id = ?", (report_id,))
-        report = cursor.fetchone()
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='archived_reports_old';")
+        if cursor.fetchone():
+            cursor.execute("SELECT report_data, department FROM archived_reports_old WHERE id = ?", (report_id,))
+            report = cursor.fetchone()
+
     if report:
         return {"status": "success", "report": {"items": json.loads(report['report_data']), "department": report['department']}}
-    return {"status": "error", "message": "ไม่พบข้อมูลรายงาน"}
+    
+    return {"status": "error", "message": "ไม่พบข้อมูลรายงานที่ต้องการแก้ไข"}
 
 def handle_get_active_statuses(payload, conn, cursor, session):
     today_str = date.today().isoformat()
@@ -1056,15 +1083,14 @@ class APIHandler(BaseHTTPRequestHandler):
                 handler_kwargs = {"payload": payload, "conn": conn, "cursor": cursor}
                 if action_name == "login":
                     handler_kwargs["client_address"] = self.client_address
-                # Updated session-requiring actions list
                 if session and action_name in [
                     "logout", "list_personnel", "submit_status_report",
                     "get_submission_history", "get_active_statuses",
                     "get_daily_personnel_for_submission", "submit_daily_report",
                     "get_daily_dashboard_summary", "get_daily_submission_history",
                     "get_daily_final_report", "archive_daily_reports",
-                    "get_archived_daily_reports",
-                    "list_holidays", "add_holiday", "delete_holiday" # Add new actions
+                    "get_archived_daily_reports", "archive_reports",
+                    "list_holidays", "add_holiday", "delete_holiday"
                     ]:
                     handler_kwargs["session"] = session
 

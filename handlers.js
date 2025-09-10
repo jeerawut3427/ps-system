@@ -255,15 +255,22 @@ export async function handleSubmitStatusReport() {
 }
 
 export async function handleExportAndArchive() {
-    const weekRangeText = document.getElementById('report-week-range')?.textContent || '';
+    const weekRangeText = document.getElementById('report-week-range')?.textContent.replace(/[()]/g, '').trim() || '';
+    
     window.archiveConfirmModal.classList.remove('active');
     if (!window.currentWeeklyReports || window.currentWeeklyReports.length === 0) {
         showMessage('ไม่มีข้อมูลรายงานที่จะส่งออก', false);
         return;
     }
+    
     exportSingleReportToExcel(window.currentWeeklyReports, `รายงานกำลังพล-${new Date().toISOString().split('T')[0]}.xlsx`, weekRangeText);
+    
     try {
-        const response = await sendRequest('archive_reports', { reports: window.currentWeeklyReports });
+        const response = await sendRequest('archive_reports', { 
+            reports: window.currentWeeklyReports,
+            week_range: weekRangeText 
+        });
+
         showMessage(response.message, response.status === 'success');
         if (response.status === 'success') {
             window.loadDataForPane('pane-report');
@@ -276,10 +283,19 @@ export async function handleExportAndArchive() {
 export function handleShowArchive() {
     const year = window.archiveYearSelect.value;
     const month = window.archiveMonthSelect.value;
+    const archiveTitle = document.getElementById('archive-pane-title');
+
     if (!year || !month) {
         showMessage('กรุณาเลือกปีและเดือน', false);
+        if (archiveTitle) archiveTitle.textContent = 'ประวัติการเก็บรายงานทั้งหมด';
         return;
     }
+
+    const monthName = window.archiveMonthSelect.options[window.archiveMonthSelect.selectedIndex].text;
+    if (archiveTitle) {
+        archiveTitle.textContent = `ประวัติการเก็บรายงานทั้งหมด - ${monthName} ${year}`;
+    }
+
     const reportsForMonth = window.allArchivedReports[year] ? window.allArchivedReports[year][month] : [];
     renderArchivedReports(reportsForMonth);
 }
