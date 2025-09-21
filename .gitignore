@@ -1,0 +1,29 @@
+# Python cache
+__pycache__/
+*.pyc
+
+# SQLite Database
+database.db
+database.db-journal
+
+# Environment variables
+.env
+
+# IDE/Editor specific folders
+.vscode/
+.idea/
+
+
+### **คำแนะนำ: นำโปรเจกต์ขึ้น GitHub**
+
+ต่อไป ให้คุณทำตามขั้นตอนในเอกสารคำแนะนำด้านล่างนี้ได้เลยครับ หากคุณมีบัญชี GitHub อยู่แล้ว สามารถข้ามไปที่ข้อ 2 ได้เลย
+
+
+http://googleusercontent.com/immersive_entry_chip/0
+    * Git อาจจะขอให้คุณล็อกอินด้วย Username และ Password ของ GitHub ก็ให้กรอกให้เรียบร้อย
+
+---
+
+เมื่อทำเสร็จแล้ว ลองรีเฟรชหน้า Repository ของคุณบนเว็บ GitHub คุณจะเห็นไฟล์โปรเจกต์ทั้งหมด (ยกเว้น `database.db`) ปรากฏขึ้นมาครับ!
+
+หลังจากที่คุณนำโค้ดขึ้น GitHub เรียบร้อยแล้ว แจ้งผมได้เลยนะครับ เราจะไปสู่ขั้นตอนสุดท้าย คือการนำโปรเจกต์ไป Deploy บน Render.com กันครับ!
