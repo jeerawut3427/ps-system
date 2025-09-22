@@ -121,6 +121,33 @@ export function exportSingleReportToExcel(reports, fileName, weekRangeText) {
         allItems = allItems.concat(report.items);
     });
 
+    // --- START: Added sorting logic ---
+    // Define the desired rank order from highest to lowest.
+    const RANK_ORDER = [
+        'น.อ.(พ)', 'น.อ.(พ).หญิง', 'น.อ.หม่อมหลวง', 'น.อ.', 'น.อ.หญิง',
+        'น.ท.', 'น.ท.หญิง', 'น.ต.', 'น.ต.หญิง',
+        'ร.อ.', 'ร.อ.หญิง', 'ร.ท.', 'ร.ท.หญิง', 'ร.ต.', 'ร.ต.หญิง',
+        'พ.อ.อ.(พ)', 'พ.อ.อ.', 'พ.อ.อ.หญิง', 'พ.อ.ท.', 'พ.อ.ท.หญิง',
+        'พ.อ.ต.', 'พ.อ.ต.หญิง', 'จ.อ.', 'จ.อ.หญิง', 'จ.ท.', 'จ.ท.หญิง',
+        'จ.ต.', 'จ.ต.หญิง', 'นาย', 'นาง', 'นางสาว'
+    ];
+
+    // Sort the allItems array based on the rank.
+    allItems.sort((a, b) => {
+        const rankA = a.personnel_name.split(' ')[0];
+        const rankB = b.personnel_name.split(' ')[0];
+        const indexA = RANK_ORDER.indexOf(rankA);
+        const indexB = RANK_ORDER.indexOf(rankB);
+
+        // If a rank is not in our list, treat it as lowest priority.
+        if (indexA === -1) return 1;
+        if (indexB === -1) return -1;
+
+        // Compare the ranks based on their position in RANK_ORDER.
+        return indexA - indexB;
+    });
+    // --- END: Added sorting logic ---
+
     allItems.forEach((item, index) => {
         const nameParts = item.personnel_name.split(' ');
         const rank = nameParts.length > 0 ? nameParts[0] : '';
@@ -130,17 +157,16 @@ export function exportSingleReportToExcel(reports, fileName, weekRangeText) {
         const fullName = `${firstName}  ${lastName}`;
         const dateRange = formatThaiDateRangeThai(item.start_date, item.end_date);
         
-        // โค้ดใหม่
-    let combinedDetails = toThaiNumerals(item.status); // แปลง status
+    let combinedDetails = toThaiNumerals(item.status);
     if (item.details) {
-    combinedDetails += ` ${toThaiNumerals(item.details)}`; // แปลง details
+    combinedDetails += ` ${toThaiNumerals(item.details)}`;
 }
         combinedDetails += ` (${dateRange})`;
 
         dataForExport.push({
             'ลำดับ': toThaiNumerals(index + 1),
-            'ยศ': rank, // <-- สลับตำแหน่งข้อมูล
-            'ชื่อ': fullName, // <-- สลับตำแหน่งข้อมูล
+            'ยศ': rank,
+            'ชื่อ-สกุล': fullName,
             'สภาพการณ์หรือการเปลี่ยนแปลง': combinedDetails,
             'หมายเหตุ': ''
         });
@@ -168,16 +194,14 @@ export function exportSingleReportToExcel(reports, fileName, weekRangeText) {
     const ws_data = [
         ["บัญชีรายชื่อ น.สัญญาบัตรที่ไปราชการ, คุมงาน, ศึกษา, ลากิจ และลาพักผ่อน ประจำสัปดาห์ของ กวก.ชย.ทอ."],
         [dateRangeString],
-        // --- ↓ จุดที่ 1: สลับตำแหน่งหัวตาราง ---
-        ["ลำดับ", "ยศ", "ชื่อ", "สภาพการณ์หรือการเปลี่ยนแปลง", "หมายเหตุ"]
+        ["ลำดับ", "ยศ", "ชื่อ-สกุล", "สภาพการณ์หรือการเปลี่ยนแปลง", "หมายเหตุ"]
     ];
 
     dataForExport.forEach(row => {
-        // --- ↓ จุดที่ 2: สลับตำแหน่งข้อมูลในแถว ---
         ws_data.push([
             row['ลำดับ'],
             row['ยศ'],
-            row['ชื่อ'],
+            row['ชื่อ-สกุล'],
             row['สภาพการณ์หรือการเปลี่ยนแปลง'],
             row['หมายเหตุ']
         ]);
@@ -190,11 +214,10 @@ export function exportSingleReportToExcel(reports, fileName, weekRangeText) {
         { s: { r: 1, c: 0 }, e: { r: 1, c: 4 } }  // A2-E2
     ];
 
-    // --- ↓ จุดที่ 3: สลับความกว้างของคอลัมน์ ---
     ws['!cols'] = [
         { wch: 10 }, // ลำดับ
         { wch: 20 }, // ยศ
-        { wch: 40 }, // ชื่อ
+        { wch: 40 }, // ชื่อ-สกุล
         { wch: 60 }, // สภาพการณ์หรือการเปลี่ยนแปลง
         { wch: 20 }  // หมายเหตุ
     ];
